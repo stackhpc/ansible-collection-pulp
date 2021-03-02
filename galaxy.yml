@@ -1,0 +1,13 @@
+namespace: "stackhpc"
+name: "pulp"
+version: "0.0.1"
+readme: "README.md"
+authors:
+  - "Piotr Parczewski"
+dependencies:
+  "pulp.squeezer": "*"
+license:
+  - "Apache-2.0"
+tags:
+  - pulp
+repository: "https://github.com/stackhpc/ansible-collection-pulp"

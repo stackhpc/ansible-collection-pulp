@@ -1,0 +1,32 @@
+---
+pulp_url: http://localhost:24817
+pulp_username: admin
+pulp_password: password
+validate_certs: false
+
+repositories_rpm:
+  - name: centos-baseos
+    url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=BaseOS&infra=stock
+    policy: on_demand
+    state: present
+  - name: centos-appstream
+    url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=AppStream&infra=stock
+    policy: on_demand
+    state: present
+  - name: epel
+    url: https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64&infra=stock&content=centos
+    policy: on_demand
+    state: present
+  - name: epel-modular
+    url: https://mirrors.fedoraproject.org/mirrorlist?repo=epel-modular-8&arch=x86_64&infra=stock&content=centos
+    policy: on_demand
+    state: present
+
+repositories_deb:
+  - name: ubuntu
+    url: http://archive.ubuntu.com/ubuntu
+    distributions: focal
+    components: "main restricted"
+    architectures: amd64
+    policy: on_demand
+    state: present

@@ -1,0 +1,30 @@
+---
+- name: Setup RPM repositories
+  rpm_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  with_items: "{{ repositories_rpm }}"
+
+- name: Setup RPM remotes
+  rpm_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    name: "{{ item.name }}-remote"
+    url: "{{ item.url }}"
+    policy: "{{ item.policy }}"
+    state: "{{ item.state }}"
+  with_items: "{{ repositories_rpm }}"
+
+- name: Sync RPM remotes into repositories
+  rpm_sync:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    repository: "{{ item.name }}"
+    remote: "{{ item.name }}-remote"
+  with_items: "{{ repositories_rpm }}"
+  when: item.state == "present"
