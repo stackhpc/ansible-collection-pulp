@@ -1,6 +1,6 @@
 ---
 - name: Check Pulp server status
-  status:
+  pulp.squeezer.status:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"

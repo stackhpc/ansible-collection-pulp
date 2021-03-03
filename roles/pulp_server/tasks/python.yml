@@ -1,6 +1,6 @@
 ---
 - name: Setup PyPI repositories
-  python_repository:
+  pulp.squeezer.python_repository:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
@@ -9,7 +9,7 @@
   with_items: "{{ repositories_python }}"
 
 - name: Setup PyPI remotes
-  python_remote:
+  pulp.squeezer.python_remote:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
@@ -20,7 +20,7 @@
   with_items: "{{ repositories_python }}"
 
 - name: Sync PyPI remotes into repositories
-  python_sync:
+  pulp.squeezer.python_sync:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"

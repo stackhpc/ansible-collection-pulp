@@ -1,6 +1,6 @@
 ---
 - name: Setup RPM repositories
-  rpm_repository:
+  pulp.squeezer.rpm_repository:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
@@ -9,7 +9,7 @@
   with_items: "{{ repositories_rpm }}"
 
 - name: Setup RPM remotes
-  rpm_remote:
+  pulp.squeezer.rpm_remote:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
@@ -20,7 +20,7 @@
   with_items: "{{ repositories_rpm }}"
 
 - name: Sync RPM remotes into repositories
-  rpm_sync:
+  pulp.squeezer.rpm_sync:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"

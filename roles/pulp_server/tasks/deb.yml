@@ -1,6 +1,6 @@
 ---
 - name: Setup DEB repositories
-  deb_repository:
+  pulp.squeezer.deb_repository:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
@@ -9,7 +9,7 @@
   with_items: "{{ repositories_deb }}"
 
 - name: Setup DEB remotes
-  deb_remote:
+  pulp.squeezer.deb_remote:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
@@ -23,7 +23,7 @@
   with_items: "{{ repositories_deb }}"
 
 - name: Sync DEB remotes into repositories
-  deb_sync:
+  pulp.squeezer.deb_sync:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
