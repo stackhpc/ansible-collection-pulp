@@ -1,12 +1,12 @@
 ---
 - include_tasks: deb.yml
-  when: repositories_deb is defined
+  when: repositories_deb is defined and repositories_deb.keys() | length > 0
   tags: deb
 
 - include_tasks: python.yml
-  when: repositories_python is defined
+  when: repositories_python is defined and repositories_python.keys() | length > 0
   tags: python
 
 - include_tasks: rpm.yml
-  when: repositories_rpm is defined
   tags: rpm
+  when: repositories_rpm is defined and reposutories_rpm.keys() | length > 0
