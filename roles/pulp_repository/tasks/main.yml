@@ -1,7 +1,4 @@
 ---
-- include_tasks: precheck.yml
-  tags: precheck
-
 - include_tasks: deb.yml
   when: repositories_deb is defined
   tags: deb
