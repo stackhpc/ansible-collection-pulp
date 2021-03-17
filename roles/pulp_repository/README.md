@@ -6,36 +6,17 @@ This role configures and synchronizes Pulp server repositories.
 Role variables
 --------------
 
-repositories_rpm:
-  - name: centos-baseos
-    url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=BaseOS&infra=stock
-    policy: on_demand
-    state: present
-  - name: centos-appstream
-    url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=AppStream&infra=stock
-    policy: on_demand
-    state: present
-  - name: epel
-    url: https://mirrors.fedoraproject.org/mirrorlist?repo=epel-8&arch=x86_64&infra=stock&content=centos
-    policy: on_demand
-    state: present
-  - name: epel-modular
-    url: https://mirrors.fedoraproject.org/mirrorlist?repo=epel-modular-8&arch=x86_64&infra=stock&content=centos
-    policy: on_demand
-    state: present
-
-repositories_deb:
-  - name: ubuntu
-    url: http://archive.ubuntu.com/ubuntu
-    distributions: focal
-    components: "main restricted"
-    architectures: amd64
-    policy: on_demand
-    state: present
+* `pulp_url`: URL of Pulp server
+* `pulp_username`: Username used to access Pulp server
+* `pulp_password`: Password used to access Pulp server
+* `validate_certs`: Whether to validate Pulp server certificate
+* `repositories_rpm`: List of RPM repositories
+* `repositories_deb`: List of Deb respositories
 
 Example playbook
 ----------------
 
+```
 ---
 - name: Run pulp roles
   any_errors_fatal: True
@@ -49,8 +30,17 @@ Example playbook
         - name: centos-baseos
           url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=BaseOS&infra=stock
           policy: on_demand
-          state: immediate
+          state: present
         - name: centos-appstream
           url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=AppStream&infra=stock
           policy: on_demand
-          state: immediate
+          state: present
+      repositories_deb:
+        - name: ubuntu
+          url: http://archive.ubuntu.com/ubuntu
+          distributions: focal
+          components: "main restricted"
+          architectures: amd64
+          policy: on_demand
+          state: present
+```
