@@ -1,33 +1,30 @@
 ---
-- name: Setup DEB repositories
-  pulp.squeezer.deb_repository:
+- name: Setup PyPI repositories
+  pulp.squeezer.python_repository:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     name: "{{ item.name }}"
     state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_deb }}"
+  with_items: "{{ pulp_repository_python_repos }}"
 
-- name: Setup DEB remotes
-  pulp.squeezer.deb_remote:
+- name: Setup PyPI remotes
+  pulp.squeezer.python_remote:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     name: "{{ item.name }}-remote"
     url: "{{ item.url }}"
-    architectures: "{{ item.architectures }}"
-    components: "{{ item.components }}"
-    distributions: "{{ item.distributions }}"
     policy: "{{ item.policy }}"
     state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_deb }}"
+  with_items: "{{ pulp_repository_python_repos }}"
 
-- name: Sync DEB remotes into repositories
-  pulp.squeezer.deb_sync:
+- name: Sync PyPI remotes into repositories
+  pulp.squeezer.python_sync:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
-  with_items: "{{ pulp_repository_deb }}"
+  with_items: "{{ pulp_repository_python_repos }}"
   when: item.state == "present"
