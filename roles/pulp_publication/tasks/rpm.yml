@@ -1,0 +1,10 @@
+---
+#TODO(mnasiadka): Add support for specific versions
+- name: Ensure RPM publications are defined
+  pulp.squeezer.rpm_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    repository: "{{ item.repository }}"
+    state: "{{ item.state }}"
+  with_items: "{{ pulp_publication_rpm }}"
