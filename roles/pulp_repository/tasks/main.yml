@@ -1,12 +1,12 @@
 ---
 - include_tasks: deb.yml
-  when: repositories_deb is defined and repositories_deb | length > 0
+  when: pulp_repository_deb_repos | length > 0
   tags: deb
 
 - include_tasks: python.yml
-  when: repositories_python is defined and repositories_python | length > 0
+  when: pulp_repository_python_repos | length > 0
   tags: python
 
 - include_tasks: rpm.yml
   tags: rpm
-  when: repositories_rpm is defined and repositories_rpm | length > 0
+  when: pulp_repository_rpm_repos | length > 0

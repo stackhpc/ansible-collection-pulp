@@ -6,7 +6,7 @@
     password: "{{ pulp_password }}"
     name: "{{ item.name }}"
     state: "{{ item.state }}"
-  with_items: "{{ repositories_deb }}"
+  with_items: "{{ pulp_repository_deb_repos }}"
 
 - name: Setup DEB remotes
   pulp.squeezer.deb_remote:
@@ -20,7 +20,7 @@
     distributions: "{{ item.distributions }}"
     policy: "{{ item.policy }}"
     state: "{{ item.state }}"
-  with_items: "{{ repositories_deb }}"
+  with_items: "{{ pulp_repository_deb_repos }}"
 
 - name: Sync DEB remotes into repositories
   pulp.squeezer.deb_sync:
@@ -29,5 +29,5 @@
     password: "{{ pulp_password }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
-  with_items: "{{ repositories_deb }}"
+  with_items: "{{ pulp_repository_deb_repos }}"
   when: item.state == "present"

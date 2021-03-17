@@ -6,7 +6,7 @@
     password: "{{ pulp_password }}"
     name: "{{ item.name }}"
     state: "{{ item.state }}"
-  with_items: "{{ repositories_rpm }}"
+  with_items: "{{ pulp_repository_rpm_repos }}"
 
 - name: Setup RPM remotes
   pulp.squeezer.rpm_remote:
@@ -17,7 +17,7 @@
     url: "{{ item.url }}"
     policy: "{{ item.policy }}"
     state: "{{ item.state }}"
-  with_items: "{{ repositories_rpm }}"
+  with_items: "{{ pulp_repository_rpm_repos }}"
 
 - name: Sync RPM remotes into repositories
   pulp.squeezer.rpm_sync:
@@ -26,5 +26,5 @@
     password: "{{ pulp_password }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
-  with_items: "{{ repositories_rpm }}"
+  with_items: "{{  pulp_repository_rpm_repos}}"
   when: item.state == "present"
