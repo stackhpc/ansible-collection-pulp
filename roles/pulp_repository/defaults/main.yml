@@ -4,6 +4,6 @@ pulp_username: admin
 pulp_password: password
 validate_certs: false
 
-repositories_rpm: []
-
-repositories_deb: []
+pulp_repository_deb_repos: []
+pulp_repository_python_repos: []
+pulp_repository_rpm_repos: []

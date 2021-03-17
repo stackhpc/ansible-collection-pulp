@@ -9,9 +9,10 @@ Role variables
 * `pulp_url`: URL of Pulp server
 * `pulp_username`: Username used to access Pulp server
 * `pulp_password`: Password used to access Pulp server
-* `validate_certs`: Whether to validate Pulp server certificate
-* `repositories_rpm`: List of RPM repositories
-* `repositories_deb`: List of Deb respositories
+* `pulp_validate_certs`: Whether to validate Pulp server certificate
+* `pulp_repository_rpm_repos`: List of RPM repositories
+* `pulp_repository_python_repos`: List of PyPI repositories
+* `pulp_repository_deb_repos`: List of Deb respositories
 
 Example playbook
 ----------------
@@ -26,7 +27,7 @@ Example playbook
     - role: stackhpc.pulp.pulp_repository
       pulp_username: admin
       pulp_password: "{{ secrets_pulp_admin_password }}"
-      repositories_rpm:
+      pulp_repository_rpm_repos:
         - name: centos-baseos
           url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=BaseOS&infra=stock
           policy: on_demand
@@ -35,7 +36,7 @@ Example playbook
           url: http://mirrorlist.centos.org/?release=8&arch=x86_64&repo=AppStream&infra=stock
           policy: on_demand
           state: present
-      repositories_deb:
+      pulp_repository_deb_repos:
         - name: ubuntu
           url: http://archive.ubuntu.com/ubuntu
           distributions: focal
