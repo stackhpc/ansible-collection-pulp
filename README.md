@@ -1,14 +1,15 @@
 # StackHPC pulp collection
 
 This repo contains `stackhpc.pulp` Ansible Collection. The collection includes roles supported by StackHPC for Pulp repository server configuration.
+Note: Pulp server installation is out of this collection's scope - for this purpose please see [an official collection](https://galaxy.ansible.com/pulp/pulp_installer).
 
 ## Tested with Ansible
 
-Tested with the current Ansible 2.9 releases.
+Tested with the current Ansible 2.9-2.10 releases.
 
 ## Included content
 
-pulp_server role
+pulp_repository role
 
 ## Using this collection
 
