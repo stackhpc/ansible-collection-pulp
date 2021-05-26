@@ -2,7 +2,10 @@
 pulp_url: https://localhost:24817
 pulp_username: admin
 pulp_password: password
-validate_certs: true
+pulp_validate_certs: true
+
+pulp_sync_remotes: true
+pulp_distribute: true
 
 pulp_repository_deb_repos: []
 pulp_repository_python_repos: []

@@ -1,9 +1,0 @@
----
-pulp_url: http://localhost:24817
-pulp_username: admin
-pulp_password: password
-pulp_validate_certs: false
-
-pulp_publication_deb: []
-pulp_publication_python: []
-pulp_publication_rpm: []

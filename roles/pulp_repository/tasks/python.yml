@@ -5,8 +5,8 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     name: "{{ item.name }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_python }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ pulp_repository_python_repos }}"
 
 - name: Setup PyPI remotes
   pulp.squeezer.python_remote:
@@ -16,8 +16,8 @@
     name: "{{ item.name }}-remote"
     url: "{{ item.url }}"
     policy: "{{ item.policy }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_python }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ pulp_repository_python_repos }}"
 
 - name: Sync PyPI remotes into repositories
   pulp.squeezer.python_sync:
@@ -26,5 +26,37 @@
     password: "{{ pulp_password }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
-  with_items: "{{ pulp_repository_python }}"
-  when: item.state == "present"
+  with_items: "{{ pulp_repository_python_repos }}"
+  when:
+    pulp_sync_remotes|bool and
+    item.state|default('present') == 'present'
+  register: pulp_repository_python
+
+- name: Ensure PyPI publications are defined
+  pulp.squeezer.python_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    repository: "{{ item.name }}"
+    version: "{{ item.version | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ pulp_repository_python_repos }}"
+  when: pulp_distribute|bool
+  register: pulp_publication_python
+
+- name: Ensure Python distributions are defined
+  pulp.squeezer.python_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    name: "{{ result.item.name }}"
+    base_path: "{{ result.item.base_path }}"
+    publication: "{{ result.item.publication.pulp_href }}"
+    state: "{{ result.item.state | default('present') }}"
+  loop: "{{ pulp_publication_python.results }}"
+  when:
+    pulp_distribute|bool and
+    result.skipped|default(false)|bool == false
+  loop_control:
+    loop_var: result
+  register: pulp_distribution_python

@@ -1,8 +1,0 @@
----
-- name: Check Pulp server status
-  pulp.squeezer.status:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_username }}"
-    password: "{{ pulp_password }}"
-    validate_certs: "{{ pulp_validate_certs | default(true) }}"
-    refresh_api_cache: true

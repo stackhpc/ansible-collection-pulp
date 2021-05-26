@@ -5,8 +5,8 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     name: "{{ item.name }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_deb }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ pulp_repository_deb_repos }}"
 
 - name: Setup DEB remotes
   pulp.squeezer.deb_remote:
@@ -19,8 +19,8 @@
     components: "{{ item.components }}"
     distributions: "{{ item.distributions }}"
     policy: "{{ item.policy }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_deb }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ pulp_repository_deb_repos }}"
 
 - name: Sync DEB remotes into repositories
   pulp.squeezer.deb_sync:
@@ -29,5 +29,37 @@
     password: "{{ pulp_password }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
-  with_items: "{{ pulp_repository_deb }}"
-  when: item.state == "present"
+  with_items: "{{ pulp_repository_deb_repos }}"
+  when:
+    pulp_sync_remotes|bool and
+    item.state|default('present') == 'present'
+  register: pulp_repository_deb
+
+- name: Ensure DEB publications are defined
+  pulp.squeezer.deb_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    repository: "{{ item.name }}"
+    version: "{{ item.version | default(omit) }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ pulp_repository_deb_repos }}"
+  when: pulp_distribute|bool
+  register: pulp_publication_deb
+
+- name: Ensure Deb distributions are defined
+  pulp.squeezer.deb_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    name: "{{ result.item.name }}"
+    base_path: "{{ result.item.base_path }}"
+    publication: "{{ result.item.publication.pulp_href }}"
+    state: "{{ item.state | default('present') }}"
+  loop: "{{ pulp_publication_deb.results }}"
+  when:
+    pulp_distribute|bool and
+    result.skipped|default(false)|bool == false
+  loop_control:
+    loop_var: result
+  register: pulp_distribution_deb
