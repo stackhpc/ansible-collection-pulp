@@ -51,7 +51,7 @@
     password: "{{ pulp_password }}"
     name: "{{ result.item.name }}"
     base_path: "{{ result.item.base_path }}"
-    publication: "{{ result.item.publication.pulp_href }}"
+    publication: "{{ result.publication.pulp_href }}"
     state: "{{ result.item.state | default('present') }}"
   loop: "{{ pulp_publication_rpm.results }}"
   when:
