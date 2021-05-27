@@ -1,5 +1,7 @@
 # StackHPC pulp collection
 
+[![CI](https://github.com/stackhpc/ansible-collection-pulp/actions/workflows/main.yml/badge.svg)](https://github.com/stackhpc/ansible-collection-pulp/actions/workflows/main.yml)
+
 This repo contains `stackhpc.pulp` Ansible Collection. The collection includes roles supported by StackHPC for Pulp repository server configuration.
 Note: Pulp server installation is out of this collection's scope - for this purpose please see [an official collection](https://galaxy.ansible.com/pulp/pulp_installer).
 
