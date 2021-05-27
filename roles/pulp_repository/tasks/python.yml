@@ -49,7 +49,7 @@
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
-    name: "{{ result.item.name }}"
+    name: "{{ pulp_distribution_env_prefix if pulp_distribution_env|length > 0 }}{{ result.item.name }}"
     base_path: "{{ result.item.base_path }}"
     publication: "{{ result.publication.pulp_href }}"
     state: "{{ result.item.state | default('present') }}"
