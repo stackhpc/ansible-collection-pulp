@@ -8,7 +8,9 @@ pulp_sync_remotes: true
 pulp_distribute: true
 pulp_distribution_env: ""
 pulp_distribution_env_separator: "-"
+pulp_distribution_env_url_separator: "/"
 pulp_distribution_env_prefix: "{{ pulp_distribution_env }}{{ pulp_distribution_env_separator }}"
+pulp_distribution_env_url_prefix: "{{ pulp_distribution_env }}{{ pulp_distribution_env_url_separator }}"
 
 pulp_repository_deb_repos: []
 pulp_repository_python_repos: []

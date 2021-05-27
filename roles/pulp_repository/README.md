@@ -12,7 +12,7 @@ Role variables
 * `pulp_validate_certs`: Whether to validate Pulp server certificate
 * `pulp_sync_remotes`: Whether to sync remotes with repositories
 * `pulp_distribute`: Whether to publish and distribute repositories
-* `pulp_distribution_env`: Optional prefix for the distribution name
+* `pulp_distribution_env`: Optional prefix for the distribution name and base_path
 * `pulp_repository_rpm_repos`: List of RPM repositories
 * `pulp_repository_python_repos`: List of PyPI repositories
 * `pulp_repository_deb_repos`: List of Deb respositories
