@@ -26,5 +26,5 @@
     password: "{{ pulp_password }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
-  with_items: "{{  pulp_repository_rpm_repos}}"
+  with_items: "{{  pulp_repository_rpm_repos }}"
   when: item.state == "present"

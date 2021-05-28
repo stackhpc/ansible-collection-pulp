@@ -1,8 +1,7 @@
-# This is a basic workflow to help you get started with Actions
 
-name: Ansible lint
+name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
@@ -13,18 +12,27 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  lint:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    strategy:
+      fail-fast: false
+      matrix:
+        ansible:
+          - stable-2.9
+          - stable-2.10
+          - devel
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checks-out the repository under $GITHUB_WORKSPACE, so it's accessible to the job
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
-      - name: Lint Ansible playbook
-        uses: ansible/ansible-lint-action@master
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install git+https://github.com/ansible/ansible.git@${{ matrix.ansible }}
+          pip install 'ansible-lint<5'
+          ansible-galaxy collection install pulp.squeezer
+
+      - name: Linting code
+        run: |
+          ansible-lint -v --force-color
