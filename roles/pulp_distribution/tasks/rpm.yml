@@ -1,11 +1,28 @@
 ---
+- name: Query distributions
+  pulp.squeezer.rpm_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+  register: pulp_repos_list
+
+- name: Query publications
+  pulp.squeezer.rpm_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+  register: pulp_pubs_list
+
 - name: Ensure RPM distributions are defined
+  vars:
+    repo: "{{ pulp_repos_list.repositories | selectattr('name', 'equalto', item.repository) | first }}"
+    pub: "{{ pulp_pubs_list.publications | selectattr('repository_version', 'equalto', repo.pulp_href ~ 'versions/' ~ item.version ~ '/') | first }}"
   pulp.squeezer.rpm_distribution:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     name: "{{ item.name }}"
     base_path: "{{ item.base_path }}"
-    publication: "{{ item.publication }}"
+    publication: "{{ pub.pulp_href }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_distribution_rpm }}"
