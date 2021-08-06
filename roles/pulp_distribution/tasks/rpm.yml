@@ -1,5 +1,28 @@
 ---
+- name: Query repositories
+  pulp.squeezer.rpm_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+  register: pulp_repos_list
+
+- name: Query publications
+  pulp.squeezer.rpm_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+  register: pulp_pubs_list
+
 - name: Ensure RPM distributions are defined
+  vars:
+    repo: "{{ pulp_repos_list.repositories | selectattr('name', 'equalto', item.repository) | first }}"
+    # If the distribution references a specific version:
+    specific_pub: "{{ pulp_pubs_list.publications | selectattr('repository_version', 'equalto', repo.pulp_href ~ 'versions/' ~ item.version | default ~ '/') }}"
+    # If the distribution uses the latest version:
+    latest_pub: "{{ pulp_pubs_list.publications | selectattr('repository', 'equalto', repo.pulp_href) | sort(attribute='repository_version', reverse=True) }}"
+    pub: "{{ latest_pub | first if item.version is not defined else specific_pub | first }}"
   pulp.squeezer.rpm_distribution:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
@@ -7,6 +30,6 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
     name: "{{ item.name }}"
     base_path: "{{ item.base_path }}"
-    publication: "{{ item.publication }}"
+    publication: "{{ pub.pulp_href }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_distribution_rpm }}"

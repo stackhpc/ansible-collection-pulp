@@ -29,10 +29,11 @@ Example playbook
       pulp_distribution_rpm:
         - name: centos-baseos
           base_path: centos-baseos
-          publication:
+          repository: centos-baseos
           state: present
         - name: centos-appstream
           base_path: centos-appstream
-          publication:
+          repository: centos-appstream
+          version: 2
           state: present
 ```
