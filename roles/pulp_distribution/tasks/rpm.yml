@@ -15,6 +15,14 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
   register: pulp_pubs_list
 
+- name: Query distributions
+  pulp.squeezer.rpm_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+  register: pulp_dists_list
+
 - name: Ensure RPM distributions are defined
   vars:
     repo: "{{ pulp_repos_list.repositories | selectattr('name', 'equalto', item.repository) | first }}"
@@ -23,6 +31,8 @@
     # If the distribution uses the latest version:
     latest_pub: "{{ pulp_pubs_list.publications | selectattr('repository', 'equalto', repo.pulp_href) | sort(attribute='repository_version', reverse=True) }}"
     pub: "{{ latest_pub | first if item.version is not defined else specific_pub | first }}"
+    # Whether any distributions exist for this publication.
+    pub_has_dists: "{{ pulp_dists_list.distributions | selectattr('publication', 'equalto', pub.pulp_href) | list | length > 0 }}"
   pulp.squeezer.rpm_distribution:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
@@ -30,6 +40,9 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
     name: "{{ item.name }}"
     base_path: "{{ item.base_path }}"
-    publication: "{{ pub.pulp_href }}"
+    publication: "{{ pub.pulp_href if item.state == 'present' else omit }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_distribution_rpm }}"
+  when: >-
+    item.state == 'absent' or
+    not (item.skip_existing | default(pulp_distribution_rpm_skip_existing) | bool and pub_has_dists)

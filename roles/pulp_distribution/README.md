@@ -11,6 +11,10 @@ Role variables
 * `pulp_password`: Password used to access Pulp server. Default is unse
 * `pulp_validate_certs`: Whether to validate Pulp server certificate. Default is `true`
 * `pulp_distribution_rpm`: List of distributions for RPM repositories. Default is an empty list
+* `pulp_distribution_rpm_skip_existing`: Whether to skip existing RPM
+  distributions. If true, new distributions will not be created for a
+  publication if any distributions exist for the same publication.
+  Default is `false`.
 
 Example playbook
 ----------------
