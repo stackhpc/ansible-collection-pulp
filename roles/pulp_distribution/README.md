@@ -31,13 +31,20 @@ Example playbook
       pulp_username: admin
       pulp_password: "{{ secrets_pulp_admin_password }}"
       pulp_distribution_rpm:
+        # Distribute the latest version of the centos-baseos repository.
         - name: centos-baseos
           base_path: centos-baseos
           repository: centos-baseos
           state: present
+        # Distribute version 2 of the centos-appstream repository.
         - name: centos-appstream
           base_path: centos-appstream
           repository: centos-appstream
           version: 2
+          state: present
+        # Distribute the same publication as the centos-baseos distribution.
+        - name: centos-baseos-production
+          base_path: centos-baseos-production
+          distribution: centos-baseos
           state: present
 ```

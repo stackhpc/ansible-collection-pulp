@@ -30,7 +30,11 @@
     specific_pub: "{{ pulp_pubs_list.publications | selectattr('repository_version', 'equalto', repo.pulp_href ~ 'versions/' ~ item.version | default ~ '/') }}"
     # If the distribution uses the latest version:
     latest_pub: "{{ pulp_pubs_list.publications | selectattr('repository', 'equalto', repo.pulp_href) | sort(attribute='repository_version', reverse=True) }}"
-    pub: "{{ latest_pub | first if item.version is not defined else specific_pub | first }}"
+    # If another distribution is being promoted to this one:
+    promoted_dist: "{{ pulp_dists_list.distributions | selectattr('name', 'equalto', item.distribution | default) }}"
+    promoted_pub: "{{ pulp_pubs_list.publications | selectattr('pulp_href', 'equalto', (promoted_dist | first).publication | default) }}"
+    # Pick the right pubication based on the type of distribution.
+    pub: "{{ specific_pub | first if item.version is defined else promoted_pub | first if item.distribution is defined else latest_pub | first }}"
     # Whether any distributions exist for this publication.
     pub_has_dists: "{{ pulp_dists_list.distributions | selectattr('publication', 'equalto', pub.pulp_href) | list | length > 0 }}"
   pulp.squeezer.rpm_distribution:
