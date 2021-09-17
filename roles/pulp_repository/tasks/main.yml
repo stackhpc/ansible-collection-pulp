@@ -1,4 +1,8 @@
 ---
+- include_tasks: container.yml
+  tags: container
+  when: pulp_repository_container_repos | length > 0
+
 - include_tasks: deb.yml
   when: pulp_repository_deb_repos | length > 0
   tags: deb

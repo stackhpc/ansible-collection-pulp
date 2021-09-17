@@ -4,6 +4,7 @@ pulp_username: admin
 pulp_password:
 pulp_validate_certs: true
 
+pulp_distribution_container: []
 pulp_distribution_rpm: []
 
 # Whether to skip existing RPM distributions. If true, new distributions will
