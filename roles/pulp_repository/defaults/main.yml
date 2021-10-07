@@ -1,7 +1,7 @@
 ---
-pulp_url: https://localhost:24817
+pulp_url: https://localhost:8080
 pulp_username: admin
-pulp_password: password
+pulp_password:
 validate_certs: true
 
 pulp_repository_deb_repos: []
