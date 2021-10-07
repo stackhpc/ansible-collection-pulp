@@ -2,6 +2,8 @@
 
 [![Tests](https://github.com/stackhpc/ansible-collection-pulp/actions/workflows/pull_request.yml/badge.svg)](https://github.com/stackhpc/ansible-collection-pulp/actions/workflows/pull_request.yml) [![Publish to Galaxy](https://github.com/stackhpc/ansible-collection-pulp/actions/workflows/publish.yml/badge.svg)](https://github.com/stackhpc/ansible-collection-pulp/actions/workflows/publish.yml)
 
+Test
+
 This repo contains `stackhpc.pulp` Ansible Collection. The collection includes roles supported by StackHPC for Pulp repository server configuration.
 Note: Pulp server installation is out of this collection's scope - for this purpose please see [an official collection](https://galaxy.ansible.com/pulp/pulp_installer).
 
