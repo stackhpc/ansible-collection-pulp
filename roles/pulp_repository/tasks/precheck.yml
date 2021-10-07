@@ -4,5 +4,5 @@
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
-    validate_certs: "{{ pulp_validate_certs | default(true) }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
     refresh_api_cache: true
