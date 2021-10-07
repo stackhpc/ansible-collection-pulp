@@ -6,13 +6,13 @@ This role configures and synchronizes Pulp server repositories.
 Role variables
 --------------
 
-* `pulp_url`: URL of Pulp server
-* `pulp_username`: Username used to access Pulp server
-* `pulp_password`: Password used to access Pulp server
-* `pulp_validate_certs`: Whether to validate Pulp server certificate
-* `pulp_repository_rpm_repos`: List of RPM repositories
-* `pulp_repository_python_repos`: List of PyPI repositories
-* `pulp_repository_deb_repos`: List of Deb respositories
+* `pulp_url`: URL of Pulp server. Default is `https://localhost:8080`
+* `pulp_username`: Username used to access Pulp server. Default is `admin`
+* `pulp_password`: Password used to access Pulp server. Default is unset
+* `pulp_validate_certs`: Whether to validate Pulp server certificate. Default is `true`
+* `pulp_repository_rpm_repos`: List of RPM repositories. Default is an empty list.
+* `pulp_repository_python_repos`: List of PyPI repositories. Default is an empty list.
+* `pulp_repository_deb_repos`: List of Deb respositories. Default is an empty list.
 
 Example playbook
 ----------------
