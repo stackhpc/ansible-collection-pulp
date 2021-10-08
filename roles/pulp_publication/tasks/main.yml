@@ -1,0 +1,6 @@
+---
+- import_tasks: precheck.yml
+
+- include_tasks: rpm.yml
+  tags: rpm
+  when: pulp_publication_rpm | length > 0
