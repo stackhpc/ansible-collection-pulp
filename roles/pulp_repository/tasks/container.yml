@@ -1,0 +1,34 @@
+---
+- name: Setup container repositories
+  pulp.squeezer.container_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  with_items: "{{ pulp_repository_container_repos }}"
+
+- name: Setup container remotes
+  pulp.squeezer.container_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    name: "{{ item.name }}-remote"
+    url: "{{ item.url }}"
+    policy: "{{ item.policy }}"
+    upstream_name: "{{ item.upstream_name | default(item.name) }}"
+    state: "{{ item.state }}"
+  with_items: "{{ pulp_repository_container_repos }}"
+
+- name: Sync container remotes into repositories
+  pulp.squeezer.container_sync:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    repository: "{{ item.name }}"
+    remote: "{{ item.name }}-remote"
+  with_items: "{{ pulp_repository_container_repos }}"
+  when: item.state == "present"

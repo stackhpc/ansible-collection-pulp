@@ -1,0 +1,13 @@
+---
+- name: Ensure container distributions are defined
+  pulp.squeezer.container_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    name: "{{ item.name }}"
+    base_path: "{{ item.base_path }}"
+    repository: "{{ item.repository }}"
+    version: "{{ item.version | default(omit) }}"
+    state: "{{ item.state }}"
+  with_items: "{{ pulp_distribution_container }}"

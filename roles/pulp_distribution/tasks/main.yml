@@ -1,6 +1,10 @@
 ---
 - import_tasks: precheck.yml
 
+- include_tasks: container.yml
+  when: pulp_distribution_container | length > 0
+  tags: container
+
 - include_tasks: rpm.yml
   tags: rpm
   when: pulp_distribution_rpm | length > 0
