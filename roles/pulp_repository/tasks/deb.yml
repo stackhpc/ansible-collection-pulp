@@ -32,5 +32,6 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
+    mirror: "{{ item.mirror | default(omit) }}"
   with_items: "{{ pulp_repository_deb_repos }}"
   when: item.state == "present"
