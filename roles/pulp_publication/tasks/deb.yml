@@ -1,0 +1,11 @@
+---
+- name: Ensure Deb publications are defined
+  pulp.squeezer.deb_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    repository: "{{ item.repository }}"
+    state: "{{ item.state }}"
+    version: "{{ item.version | default(omit) }}"
+  with_items: "{{ pulp_publication_deb }}"

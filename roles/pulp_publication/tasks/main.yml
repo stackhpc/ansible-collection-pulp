@@ -1,6 +1,10 @@
 ---
 - import_tasks: precheck.yml
 
+- include_tasks: deb.yml
+  tags: deb
+  when: pulp_publication_deb | length > 0
+
 - include_tasks: rpm.yml
   tags: rpm
   when: pulp_publication_rpm | length > 0
