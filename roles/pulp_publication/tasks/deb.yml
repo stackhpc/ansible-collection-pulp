@@ -8,4 +8,5 @@
     repository: "{{ item.repository }}"
     state: "{{ item.state }}"
     version: "{{ item.version | default(omit) }}"
+    mode: "{{ item.mode | default(omit) }}"
   with_items: "{{ pulp_publication_deb }}"
