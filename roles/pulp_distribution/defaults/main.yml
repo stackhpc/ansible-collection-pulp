@@ -5,9 +5,11 @@ pulp_password:
 pulp_validate_certs: true
 
 pulp_distribution_container: []
+pulp_distribution_deb: []
 pulp_distribution_rpm: []
 
-# Whether to skip existing RPM distributions. If true, new distributions will
+# Whether to skip existing distributions. If true, new distributions will
 # not be created for a publication if any distributions exist for the same
 # publication.
+pulp_distribution_deb_skip_existing: false
 pulp_distribution_rpm_skip_existing: false

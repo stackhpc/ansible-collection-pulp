@@ -11,7 +11,12 @@ Role variables
 * `pulp_password`: Password used to access Pulp server. Default is unse
 * `pulp_validate_certs`: Whether to validate Pulp server certificate. Default is `true`
 * `pulp_distribution_container`: List of distributions for container repositories. Default is an empty list
+* `pulp_distribution_deb`: List of distributions for Deb repositories. Default is an empty list
 * `pulp_distribution_rpm`: List of distributions for RPM repositories. Default is an empty list
+* `pulp_distribution_deb_skip_existing`: Whether to skip existing Deb
+  distributions. If true, new distributions will not be created for a
+  publication if any distributions exist for the same publication.
+  Default is `false`.
 * `pulp_distribution_rpm_skip_existing`: Whether to skip existing RPM
   distributions. If true, new distributions will not be created for a
   publication if any distributions exist for the same publication.
@@ -42,6 +47,23 @@ Example playbook
           base_path: pulp/pulp
           repository: pulp/pulp
           version: 2
+          state: present
+      pulp_distribution_deb:
+        # Distribute the latest version of the ubuntu-focal repository.
+        - name: ubuntu-focal
+          base_path: ubuntu-focal
+          repository: ubuntu-focal
+          state: present
+        # Distribute version 2 of the ubuntu-focal-security repository.
+        - name: ubuntu-focal-security
+          base_path: ubuntu-focal-security
+          repository: ubuntu-focal-security
+          version: 2
+          state: present
+        # Distribute the same publication as the ubuntu-focal distribution.
+        - name: ubuntu-focal-production
+          base_path: ubuntu-focal-production
+          distribution: ubuntu-focal
           state: present
       pulp_distribution_rpm:
         # Distribute the latest version of the centos-baseos repository.

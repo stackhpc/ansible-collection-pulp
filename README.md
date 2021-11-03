@@ -11,11 +11,7 @@ Tested with the current Ansible 2.9-2.10 releases.
 
 ## Included content
 
-Roles:
-
-* `pulp_repository`
-* `pulp_publication`
-* `pulp_distribution`
+pulp_repository role
 
 ## Using this collection
 
