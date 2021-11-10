@@ -29,7 +29,7 @@
     # If the distribution references a specific version:
     specific_pub: "{{ pulp_pubs_list.publications | selectattr('repository_version', 'equalto', repo.pulp_href ~ 'versions/' ~ item.version | default ~ '/') }}"
     # If the distribution uses the latest version:
-    latest_pub: "{{ pulp_pubs_list.publications | selectattr('repository', 'equalto', repo.pulp_href) | sort(attribute='repository_version', reverse=True) }}"
+    latest_pub: "{{ pulp_pubs_list.publications | selectattr('repository', 'equalto', repo.pulp_href) | stackhpc.pulp.sort_publications }}"
     # If another distribution is being promoted to this one:
     promoted_dist: "{{ pulp_dists_list.distributions | selectattr('name', 'equalto', item.distribution | default) }}"
     promoted_pub: "{{ pulp_pubs_list.publications | selectattr('pulp_href', 'equalto', (promoted_dist | first).publication | default) }}"
