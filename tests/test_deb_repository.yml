@@ -1,0 +1,81 @@
+---
+- name: Test pulp_repository
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_deb_repos:
+          - name: test_deb_repo
+            url: "https://fixtures.pulpproject.org/debian/"
+            distributions: "ragnarok"
+            policy: immediate
+            state: present
+
+    - name: Query repository
+      pulp.squeezer.deb_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_deb_repo
+      register: repo_result
+
+    - name: Verify repository creation
+      assert:
+        that:
+          - repo_result.repository.name == "test_deb_repo"
+
+    - name: Query remote
+      pulp.squeezer.deb_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_deb_repo-remote
+      register: remote_result
+
+    - name: Verify remote creation
+      assert:
+        that:
+          - remote_result.remote.name == "test_deb_repo-remote"
+          - remote_result.remote.url == "https://fixtures.pulpproject.org/debian/"
+          - remote_result.remote.distributions == "ragnarok"
+          - remote_result.remote.policy == "immediate"
+
+    - include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_deb_repos:
+          - name: test_deb_repo
+            state: absent
+
+    - name: Query repositories
+      pulp.squeezer.deb_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: deb_repositories
+
+    - name: Verify repository deletion
+      assert:
+        that: deb_repositories.repositories | length == 0
+
+    - name: Query remotes
+      pulp.squeezer.deb_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: deb_remotes
+
+    - name: Verify remote deletion
+      assert:
+        that: deb_remotes.remotes | length == 0
