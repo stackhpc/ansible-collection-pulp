@@ -29,5 +29,6 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
     repository: "{{ item.name }}"
     remote: "{{ item.name }}-remote"
+    sync_policy: "{{ item.sync_policy | default(omit) }}"
   with_items: "{{  pulp_repository_rpm_repos }}"
   when: item.state == "present"
