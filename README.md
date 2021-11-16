@@ -11,6 +11,7 @@ Tested with the current Ansible 2.9-2.10 releases.
 
 ## Included content
 
+pulp_contentguard role
 pulp_repository role
 
 ## Using this collection
