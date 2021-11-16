@@ -9,5 +9,6 @@
     base_path: "{{ item.base_path }}"
     repository: "{{ item.repository }}"
     version: "{{ item.version | default(omit) }}"
+    content_guard: "{{ item.content_guard | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_distribution_container }}"

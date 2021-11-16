@@ -42,11 +42,12 @@ Example playbook
           base_path: pulp/pulp
           repository: pulp/pulp
           state: present
-        # Distribute version 2 of the pulp/pulp repository.
+        # Distribute version 2 of the pulp/pulp repository with a content guard.
         - name: pulp/pulp
           base_path: pulp/pulp
           repository: pulp/pulp
           version: 2
+          content_guard: secure-content-guard
           state: present
       pulp_distribution_deb:
         # Distribute the latest version of the ubuntu-focal repository.
@@ -60,10 +61,11 @@ Example playbook
           repository: ubuntu-focal-security
           version: 2
           state: present
-        # Distribute the same publication as the ubuntu-focal distribution.
+        # Distribute the same publication as the ubuntu-focal distribution with a content guard.
         - name: ubuntu-focal-production
           base_path: ubuntu-focal-production
           distribution: ubuntu-focal
+          content_guard: secure-content-guard
           state: present
       pulp_distribution_rpm:
         # Distribute the latest version of the centos-baseos repository.
@@ -77,9 +79,10 @@ Example playbook
           repository: centos-appstream
           version: 2
           state: present
-        # Distribute the same publication as the centos-baseos distribution.
+        # Distribute the same publication as the centos-baseos distribution with a content guard.
         - name: centos-baseos-production
           base_path: centos-baseos-production
           distribution: centos-baseos
+          content_guard: secure-content-guard
           state: present
 ```
