@@ -1,0 +1,3 @@
+---
+pulp_login_url: "{{ pulp_url }}/admin/login/?next=/admin/"
+pulp_add_user_url: "{{ pulp_url }}/admin/auth/user/add/"
