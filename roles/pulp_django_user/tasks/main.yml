@@ -1,0 +1,48 @@
+---
+# Interacting with Django requires us to use cookies for CSRF and login.
+# It also requires the use of a Referer header.
+
+- name: Get a CSRF token
+  uri:
+    url: "{{ pulp_login_url }}"
+    method: GET
+    headers:
+      Referer: "{{ pulp_login_url }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+  register: result_csrf
+
+- name: Login
+  uri:
+    url: "{{ pulp_login_url }}"
+    method: POST
+    headers:
+      Referer: "{{ pulp_login_url }}"
+      Cookie: "{{ result_csrf.cookies_string }}"
+    body:
+      csrfmiddlewaretoken: "{{ result_csrf.cookies.csrftoken }}"
+      username: "{{ pulp_admin_username }}"
+      password: "{{ pulp_admin_password }}"
+    body_format: form-urlencoded
+    follow_redirects: all
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+  register: result_login
+
+# This returns 200 even if the user exists.
+- name: Create a user
+  uri:
+    url: "{{ pulp_add_user_url }}"
+    method: POST
+    headers:
+      Referer: "{{ pulp_login_url }}"
+      Cookie: "{{ result_login.cookies_string }}"
+    body:
+      csrfmiddlewaretoken: "{{ result_login.cookies.csrftoken }}"
+      username: "{{ item.username }}"
+      password1: "{{ item.password }}"
+      password2: "{{ item.password }}"
+    body_format: form-urlencoded
+    follow_redirects: all
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+  loop: "{{ pulp_django_users }}"
+  loop_control:
+    label: "{{ item.username }}"
