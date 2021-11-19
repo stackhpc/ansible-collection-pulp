@@ -30,9 +30,10 @@ Example playbook
         # Create a publication of the latest version.
         - repository: ubuntu-focal
           state: present
-        # Create a publication of version 2.
+        # Create a publication of version 2 using structured mode.
         - repository: ubuntu-focal
           version: 2
+          mode: structured
           state: present
       pulp_publication_rpm:
         # Create a publication of the latest version.

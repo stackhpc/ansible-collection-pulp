@@ -15,6 +15,17 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
   register: pulp_pubs_list
 
+# Verbatim publications use a different API endpoint than regular Deb
+# publications.
+- name: Query verbatim publications
+  pulp.squeezer.deb_publication:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    mode: "verbatim"
+  register: pulp_verbatim_pubs_list
+
 - name: Query distributions
   pulp.squeezer.deb_distribution:
     pulp_url: "{{ pulp_url }}"
@@ -26,13 +37,14 @@
 - name: Ensure Deb distributions are defined
   vars:
     repo: "{{ pulp_repos_list.repositories | selectattr('name', 'equalto', item.repository) | first }}"
+    all_pubs_list: "{{ pulp_pubs_list.publications + pulp_verbatim_pubs_list.publications }}"
     # If the distribution references a specific version:
-    specific_pub: "{{ pulp_pubs_list.publications | selectattr('repository_version', 'equalto', repo.pulp_href ~ 'versions/' ~ item.version | default ~ '/') }}"
+    specific_pub: "{{ all_pubs_list | selectattr('repository_version', 'equalto', repo.pulp_href ~ 'versions/' ~ item.version | default ~ '/') }}"
     # If the distribution uses the latest version:
-    latest_pub: "{{ pulp_pubs_list.publications | selectattr('repository', 'equalto', repo.pulp_href) | stackhpc.pulp.sort_publications }}"
+    latest_pub: "{{ all_pubs_list | selectattr('repository', 'equalto', repo.pulp_href) | stackhpc.pulp.sort_publications }}"
     # If another distribution is being promoted to this one:
     promoted_dist: "{{ pulp_dists_list.distributions | selectattr('name', 'equalto', item.distribution | default) }}"
-    promoted_pub: "{{ pulp_pubs_list.publications | selectattr('pulp_href', 'equalto', (promoted_dist | first).publication | default) }}"
+    promoted_pub: "{{ all_pubs_list | selectattr('pulp_href', 'equalto', (promoted_dist | first).publication | default) }}"
     # Pick the right publication based on the type of distribution.
     pubs: "{{ specific_pub if item.version is defined else promoted_pub if item.distribution is defined else latest_pub }}"
     # Whether any distributions exist for this publication.
