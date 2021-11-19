@@ -46,6 +46,7 @@
     name: "{{ item.name }}"
     base_path: "{{ item.base_path }}"
     publication: "{{ pubs[0].pulp_href if item.state == 'present' else omit }}"
+    content_guard: "{{ item.content_guard | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_distribution_deb }}"
   when: >-

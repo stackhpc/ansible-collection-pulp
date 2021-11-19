@@ -1,0 +1,14 @@
+---
+- name: Ensure x509 cert guards exist
+  pulp.squeezer.x509_cert_guard:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    name: "{{ item.name }}"
+    description: "{{ item.description | default(omit) }}"
+    ca_certificate: "{{ item.ca_certificate | default(omit) }}"
+    state: "{{ item.state }}"
+  with_items: "{{ pulp_content_guard_x509_cert_guards }}"
+  loop_control:
+    label: "{{ item.name }}"
