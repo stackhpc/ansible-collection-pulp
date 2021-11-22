@@ -8,6 +8,8 @@
     name: "{{ item.name }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_python_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Setup PyPI remotes
   pulp.squeezer.python_remote:
@@ -33,6 +35,8 @@
     url: "{{ item.url | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_python_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Sync PyPI remotes into repositories
   pulp.squeezer.python_sync:
@@ -44,3 +48,5 @@
     remote: "{{ item.name }}-remote"
   with_items: "{{ pulp_repository_python_repos }}"
   when: item.state == "present"
+  loop_control:
+    label: "{{ item.name }}"

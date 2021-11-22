@@ -8,6 +8,8 @@
     name: "{{ item.name }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_rpm_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Setup RPM remotes
   pulp.squeezer.rpm_remote:
@@ -30,6 +32,8 @@
     url: "{{ item.url | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_rpm_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Sync RPM remotes into repositories
   pulp.squeezer.rpm_sync:
@@ -42,3 +46,5 @@
     sync_policy: "{{ item.sync_policy | default(omit) }}"
   with_items: "{{  pulp_repository_rpm_repos }}"
   when: item.state == "present"
+  loop_control:
+    label: "{{ item.name }}"

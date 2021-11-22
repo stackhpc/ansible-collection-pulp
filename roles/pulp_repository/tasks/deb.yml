@@ -8,6 +8,8 @@
     name: "{{ item.name }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_deb_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Setup DEB remotes
   pulp.squeezer.deb_remote:
@@ -33,6 +35,8 @@
     url: "{{ item.url | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_deb_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Sync DEB remotes into repositories
   pulp.squeezer.deb_sync:
@@ -45,3 +49,5 @@
     mirror: "{{ item.mirror | default(omit) }}"
   with_items: "{{ pulp_repository_deb_repos }}"
   when: item.state == "present"
+  loop_control:
+    label: "{{ item.name }}"
