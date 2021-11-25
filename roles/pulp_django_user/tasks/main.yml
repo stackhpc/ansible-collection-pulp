@@ -46,3 +46,14 @@
   loop: "{{ pulp_django_users }}"
   loop_control:
     label: "{{ item.username }}"
+
+- name: Add user to group(s)
+  include_tasks: user_groups.yaml 
+  loop: >-
+       {%- set user_groups = [] -%}
+       {%- for user in pulp_django_users -%}
+       {%- for group in user.groups -%}
+       {{ user_groups.append({'username': user.username, 'group': group }) }}
+       {%- endfor -%}
+       {%- endfor -%}
+       {{ user_groups }}

@@ -1,0 +1,21 @@
+---
+- name: Get group href from Pulp API
+  uri:
+    url: "{{ pulp_add_group_user_url }}?name={{ item.group }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    register: result
+
+- name: Add user to group
+  uri:
+    url: "{{ pulp_url }}{{ result.json.results[0].pulp_href }}users/"
+    user: "{{ pulp_server_admin_user }}"
+    password: "{{ pulp_server_admin_password }}"
+    body:
+      username: "{{ item.username }}"
+    body_format: json
+    method: POST
+    status_code: 201
+  register: result_add

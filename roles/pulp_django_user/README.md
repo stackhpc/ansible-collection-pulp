@@ -28,4 +28,7 @@ Example playbook
       pulp_django_users:
         - username: test-user
           password: correct horse battery staple
+          groups:
+            - container.namespace.consumers.one
+            - container.namespace.consumers.two
 ```
