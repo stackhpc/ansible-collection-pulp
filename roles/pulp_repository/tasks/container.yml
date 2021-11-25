@@ -22,6 +22,8 @@
     client_cert: "{{ item.client_cert | default(omit) }}"
     client_key: "{{ item.client_key | default(omit) }}"
     download_concurrency: "{{ item.download_concurrency | default(omit) }}"
+    exclude_tags: "{{ item.exclude_tags | default(omit) }}"
+    include_tags: "{{ item.include_tags | default(omit) }}"
     policy: "{{ item.policy | default(omit) }}"
     proxy_url: "{{ item.proxy_url | default(omit) }}"
     proxy_username: "{{ item.proxy_username | default(omit) }}"

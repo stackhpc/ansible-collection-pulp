@@ -7,7 +7,7 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
     name: "{{ item.name }}"
     base_path: "{{ item.base_path }}"
-    repository: "{{ item.repository }}"
+    repository: "{{ item.repository | default(omit) }}"
     version: "{{ item.version | default(omit) }}"
     content_guard: "{{ item.content_guard | default(omit) }}"
     private: "{{ item.private | default(omit) }}"
