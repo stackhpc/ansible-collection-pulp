@@ -16,12 +16,12 @@
 
 - name: Remove user from groups not defined in pulp_django_users
   include_tasks: remove_user_from_groups.yml
-  loop: "{{ current_group_membership | difference(user.groups | default([])) }}"
+  loop: "{{ current_group_membership | difference(user.groups | default([], true)) }}"
   loop_control:
     loop_var: remove_group
 
 - name: Add user to groups defined in pulp_django_users
   include_tasks: add_user_to_groups.yml
-  loop: "{{ user.groups | default([]) | difference(current_group_membership) }}"
+  loop: "{{ user.groups | default([], true) | difference(current_group_membership) }}"
   loop_control:
     loop_var: add_group
