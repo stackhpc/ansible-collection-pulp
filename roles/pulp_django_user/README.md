@@ -12,6 +12,8 @@ Role variables
 * `pulp_validate_certs`: Whether to validate Pulp server certificate. Default is `true`
 * `pulp_django_users`: List of Django users to create. Default is an empty list.
 
+Note: User groups are evauluated against the user's current list of groups returned from the Pulp server API. Removing a group from the list of groups defined in `pulp_django_users[*].groups` will result in the user being removed from that group, and adding a group will result in the user being added to that group. Adding an empty `groups:` for a user will result in that user being removed from all groups.
+
 Example playbook
 ----------------
 
@@ -28,4 +30,7 @@ Example playbook
       pulp_django_users:
         - username: test-user
           password: correct horse battery staple
+          groups:
+            - existing.container.namespace.consumers.one
+            - existing.container.namespace.consumers.two
 ```

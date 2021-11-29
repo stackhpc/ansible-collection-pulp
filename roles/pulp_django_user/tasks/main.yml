@@ -46,3 +46,10 @@
   loop: "{{ pulp_django_users }}"
   loop_control:
     label: "{{ item.username }}"
+
+- name: Add or remove user from group(s)
+  include_tasks: user_groups/add_or_remove_users.yml
+  # Noop if pulp_django_users is defined but empty
+  loop: "{{ pulp_django_users | default([], true) }}"
+  loop_control:
+    loop_var: user
