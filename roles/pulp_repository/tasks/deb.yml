@@ -35,6 +35,7 @@
     url: "{{ item.url | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_deb_repos }}"
+  when: item.url is defined
   loop_control:
     label: "{{ item.name }}"
 
@@ -48,6 +49,8 @@
     remote: "{{ item.name }}-remote"
     mirror: "{{ item.mirror | default(omit) }}"
   with_items: "{{ pulp_repository_deb_repos }}"
-  when: item.state == "present"
+  when:
+    - item.url is defined
+    - item.state == "present"
   loop_control:
     label: "{{ item.name }}"
