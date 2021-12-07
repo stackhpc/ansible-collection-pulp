@@ -32,7 +32,7 @@
     url: "{{ item.url | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_repository_rpm_repos }}"
-  when: item.url is defined
+  when: item.state == "absent" or item.url is defined
   loop_control:
     label: "{{ item.name }}"
 
