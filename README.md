@@ -29,6 +29,20 @@ collections:
 
 See [Ansible Using collections](https://docs.ansible.com/ansible/latest/user_guide/collections_using.html) for more details.
 
+## Testing
+
+The integration tests require a running Pulp server. To run a Pulp in one container for testing:
+
+```
+tests/pulp-in-one.sh
+```
+
+Then, to run all of the integration tests:
+
+```
+ansible-playbook -v tests/*.yml
+```
+
 ## More information
 
 - [Ansible Collection overview](https://github.com/ansible-collections/overview)
