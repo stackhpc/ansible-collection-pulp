@@ -1,0 +1,104 @@
+---
+- name: Test container distribution
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_container_repos:
+          - name: test_container_repo
+            upstream_name: pulp/test-fixture-1
+            url: "https://registry-1.docker.io"
+            policy: immediate
+            state: present
+
+    - include_role:
+        name: pulp_distribution
+      vars:
+        pulp_distribution_container:
+          - name: test_container_distribution
+            base_path: test_container_distribution
+            repository: test_container_repo
+            state: present
+          - name: test_container_distribution_version_1
+            base_path: test_container_distribution_version_1
+            repository: test_container_repo
+            version: 1
+            state: present
+
+    - name: Query repository
+      pulp.squeezer.container_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_container_repo
+      register: repo_result
+
+    - name: Query distribution
+      pulp.squeezer.container_distribution:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_container_distribution
+      register: dist_result
+
+    - name: Query distribution version 1
+      pulp.squeezer.container_distribution:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_container_distribution_version_1
+      register: dist_version_1_result
+
+    - name: Verify distribution creation
+      assert:
+        that:
+          - dist_result.distribution.name == "test_container_distribution"
+          - dist_result.distribution.base_path == "test_container_distribution"
+          - dist_result.distribution.repository == repo_result.repository.pulp_href
+          - dist_result.distribution.repository_version is none
+
+    - name: Verify distribution creation
+      assert:
+        that:
+          - dist_version_1_result.distribution.name == "test_container_distribution_version_1"
+          - dist_version_1_result.distribution.base_path == "test_container_distribution_version_1"
+          - dist_version_1_result.distribution.repository is none
+          - dist_version_1_result.distribution.repository_version == repo_result.repository.latest_version_href
+
+    - include_role:
+        name: pulp_distribution
+      vars:
+        pulp_distribution_container:
+          - name: test_container_distribution
+            state: absent
+          - name: test_container_distribution_version_1
+            state: absent
+
+    - include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_container_repos:
+          - name: test_container_repo
+            state: absent
+
+    - name: Query distributions
+      pulp.squeezer.container_distribution:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: container_distributions
+
+    - name: Verify distribution deletion
+      assert:
+        that: container_distributions.distributions | length == 0
