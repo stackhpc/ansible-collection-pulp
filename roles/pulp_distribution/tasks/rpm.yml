@@ -25,27 +25,21 @@
 
 - name: Ensure RPM distributions are defined
   vars:
-    repo: "{{ pulp_repos_list.repositories | selectattr('name', 'equalto', item.repository) | first }}"
-    # If the distribution references a specific version:
-    specific_pub: "{{ pulp_pubs_list.publications | selectattr('repository_version', 'equalto', repo.pulp_href ~ 'versions/' ~ item.version | default ~ '/') }}"
-    # If the distribution uses the latest version:
-    latest_pub: "{{ pulp_pubs_list.publications | selectattr('repository', 'equalto', repo.pulp_href) | stackhpc.pulp.sort_publications }}"
-    # If another distribution is being promoted to this one:
-    promoted_dist: "{{ pulp_dists_list.distributions | selectattr('name', 'equalto', item.distribution | default) }}"
-    promoted_pub: "{{ pulp_pubs_list.publications | selectattr('pulp_href', 'equalto', (promoted_dist | first).publication | default) }}"
-    # Pick the right publication based on the type of distribution.
-    pubs: "{{ specific_pub if item.version is defined else promoted_pub if item.distribution is defined else latest_pub }}"
-    # Whether any distributions exist for this publication.
+    publication: >-
+      {{ item | stackhpc.pulp.find_publication_for_distribution(pulp_repos_list.repositories,
+                                                                pulp_pubs_list.publications,
+                                                                pulp_dists_list.distributions) }}
     pub_has_dists: >-
-      {{ pulp_dists_list.distributions | selectattr('publication', 'equalto', pubs[0].pulp_href if item.state == 'present' else None) | list | length > 0 }}
+      {{ publication | stackhpc.pulp.publication_has_distributions(pulp_pubs_list.publications,
+                                                                   pulp_dists_list.distributions) }}
   pulp.squeezer.rpm_distribution:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
     name: "{{ item.name }}"
-    base_path: "{{ item.base_path }}"
-    publication: "{{ pubs[0].pulp_href if item.state == 'present' else omit }}"
+    base_path: "{{ item.base_path | default(omit) }}"
+    publication: "{{ publication.pulp_href if item.state == 'present' else omit }}"
     content_guard: "{{ item.content_guard | default(omit) }}"
     state: "{{ item.state }}"
   with_items: "{{ pulp_distribution_rpm }}"

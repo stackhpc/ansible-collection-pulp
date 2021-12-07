@@ -38,16 +38,14 @@
             version: 1
             state: present
 
-    # FIXME: This currently fails due to
-    # https://github.com/stackhpc/ansible-collection-pulp/issues/34.
-    # - include_role:
-    #     name: pulp_distribution
-    #   vars:
-    #     pulp_distribution_rpm:
-    #       - name: test_rpm_distribution_distribution
-    #         base_path: test_rpm_distribution_distribution
-    #         distribution: test_rpm_distribution
-    #         state: present
+    - include_role:
+        name: pulp_distribution
+      vars:
+        pulp_distribution_rpm:
+          - name: test_rpm_distribution_distribution
+            base_path: test_rpm_distribution_distribution
+            distribution: test_rpm_distribution
+            state: present
 
     - name: Query repository
       pulp.squeezer.rpm_repository:
@@ -86,16 +84,14 @@
         name: test_rpm_distribution_version_1
       register: dist_version_1_result
 
-    # FIXME: This currently fails due to
-    # https://github.com/stackhpc/ansible-collection-pulp/issues/34.
-    # - name: Query distribution distribution
-    #   pulp.squeezer.rpm_distribution:
-    #     pulp_url: "{{ pulp_url }}"
-    #     username: "{{ pulp_username }}"
-    #     password: "{{ pulp_password }}"
-    #     validate_certs: "{{ pulp_validate_certs }}"
-    #     name: test_rpm_distribution_distribution
-    #   register: dist_distribution_result
+    - name: Query distribution distribution
+      pulp.squeezer.rpm_distribution:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_rpm_distribution_distribution
+      register: dist_distribution_result
 
     - name: Verify publication creation
       assert:
@@ -116,33 +112,22 @@
           - dist_version_1_result.distribution.base_path == "test_rpm_distribution_version_1"
           - dist_version_1_result.distribution.publication == pub_result.publication.pulp_href
 
-    # FIXME: This currently fails due to
-    # https://github.com/stackhpc/ansible-collection-pulp/issues/34.
-    # - name: Verify distribution creation
-    #   assert:
-    #     that:
-    #       - dist_distribution_result.distribution.name == "test_rpm_distribution_distribution"
-    #       - dist_distribution_result.distribution.base_path == "test_rpm_distribution_distribution"
-    #       - dist_distribution_result.distribution.publication == pub_result.publication.pulp_href
+    - name: Verify distribution creation
+      assert:
+        that:
+          - dist_distribution_result.distribution.name == "test_rpm_distribution_distribution"
+          - dist_distribution_result.distribution.base_path == "test_rpm_distribution_distribution"
+          - dist_distribution_result.distribution.publication == pub_result.publication.pulp_href
 
     - include_role:
         name: pulp_distribution
       vars:
         pulp_distribution_rpm:
           - name: test_rpm_distribution
-            # FIXME: These should not be required.
-            repository: test_rpm_repo
-            base_path: foo
             state: absent
           - name: test_rpm_distribution_version_1
-            # FIXME: These should not be required.
-            repository: test_rpm_repo
-            base_path: foo
             state: absent
           - name: test_rpm_distribution_distribution
-            # FIXME: These should not be required.
-            repository: test_rpm_repo
-            base_path: foo
             state: absent
 
     - include_role:
