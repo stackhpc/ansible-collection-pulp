@@ -1,0 +1,91 @@
+---
+- name: Test django users
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_admin_username: admin
+    pulp_admin_password: password
+    pulp_validate_certs: true
+  tasks:
+    - name: Query groups
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/"
+        user: "{{ pulp_admin_username }}"
+        password: "{{ pulp_admin_password }}"
+        method: GET
+        body_format: json
+        status_code: 200
+        force_basic_auth: true
+      register: groups_result
+
+    - name: Create groups
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/"
+        user: "{{ pulp_admin_username }}"
+        password: "{{ pulp_admin_password }}"
+        method: POST
+        body:
+          name: "{{ item }}"
+        body_format: json
+        status_code: 201
+        force_basic_auth: true
+      loop:
+        - test_group1
+        - test_group2
+      when: item not in groups_result.json.results | map(attribute='name') | list
+
+    - include_role:
+        name: pulp_django_user
+      vars:
+        pulp_django_users:
+          - username: test_user
+            password: correct horse battery staple
+            groups:
+              - test_group1
+
+    - name: Query user
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user"
+        user: "{{ pulp_admin_username }}"
+        password: "{{ pulp_admin_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: user_result
+
+    - name: Verify django user creation
+      assert:
+        that:
+          - user_result.json.count == 1
+          - user_result.json.results[0].username == "test_user"
+          - user_result.json.results[0].groups | length == 1
+          - user_result.json.results[0].groups[0].name == "test_group1"
+
+    # Update group membership.
+    - include_role:
+        name: pulp_django_user
+      vars:
+        pulp_django_users:
+          - username: test_user
+            password: correct horse battery staple
+            groups:
+              - test_group2
+
+    - name: Query user
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user"
+        user: "{{ pulp_admin_username }}"
+        password: "{{ pulp_admin_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: user_result
+
+    - name: Verify django user group update
+      assert:
+        that:
+          - user_result.json.count == 1
+          - user_result.json.results[0].username == "test_user"
+          - user_result.json.results[0].groups | length == 1
+          - user_result.json.results[0].groups[0].name == "test_group2"
