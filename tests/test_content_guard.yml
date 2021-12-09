@@ -1,0 +1,53 @@
+---
+- name: Test content guards
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - include_role:
+        name: pulp_content_guard
+      vars:
+        pulp_content_guard_x509_cert_guards:
+          - name: test_cert_guard
+            description: foo
+            ca_certificate: "{{ lookup('file', 'files/ca.pem') }}"
+            state: present
+
+    - name: Query content guard
+      pulp.squeezer.x509_cert_guard:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_cert_guard
+      register: cg_result
+
+    - name: Verify cert guard creation
+      assert:
+        that:
+          - cg_result.content_guard.name == "test_cert_guard"
+          - cg_result.content_guard.description == "foo"
+          - cg_result.content_guard.ca_certificate == lookup('file', 'files/ca.pem')
+
+    - include_role:
+        name: pulp_content_guard
+      vars:
+        pulp_content_guard_x509_cert_guards:
+          - name: test_cert_guard
+            state: absent
+
+    - name: Query content guards
+      pulp.squeezer.x509_cert_guard:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: cert_guards
+
+    - name: Verify cert guard deletion
+      assert:
+        that: cert_guards.content_guards | length == 0

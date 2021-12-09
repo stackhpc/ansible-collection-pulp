@@ -1,0 +1,81 @@
+---
+- name: Test container repositories
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_container_repos:
+          - name: test_container_repo
+            upstream_name: pulp/test-fixture-1
+            url: "https://registry-1.docker.io"
+            policy: immediate
+            state: present
+
+    - name: Query repository
+      pulp.squeezer.container_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_container_repo
+      register: repo_result
+
+    - name: Verify repository creation
+      assert:
+        that:
+          - repo_result.repository.name == "test_container_repo"
+
+    - name: Query remote
+      pulp.squeezer.container_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_container_repo-remote
+      register: remote_result
+
+    - name: Verify remote creation
+      assert:
+        that:
+          - remote_result.remote.name == "test_container_repo-remote"
+          - remote_result.remote.url == "https://registry-1.docker.io"
+          - remote_result.remote.upstream_name == "pulp/test-fixture-1"
+          - remote_result.remote.policy == "immediate"
+
+    - include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_container_repos:
+          - name: test_container_repo
+            state: absent
+
+    - name: Query repositories
+      pulp.squeezer.container_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: container_repositories
+
+    - name: Verify repository deletion
+      assert:
+        that: container_repositories.repositories | length == 0
+
+    - name: Query remotes
+      pulp.squeezer.container_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: container_remotes
+
+    - name: Verify remote deletion
+      assert:
+        that: container_remotes.remotes | length == 0

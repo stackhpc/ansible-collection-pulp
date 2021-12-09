@@ -3,6 +3,11 @@ pulp_django_user
 
 This role creates Django users using the Django admin site.
 
+Requirements
+------------
+
+The `jmespath` Python module must be installed on the Ansible control host.
+
 Role variables
 --------------
 
