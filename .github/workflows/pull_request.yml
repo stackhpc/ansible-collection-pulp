@@ -15,18 +15,29 @@ jobs:
       fail-fast: false
       matrix:
         ansible:
-          - stable-2.9
-          - stable-2.10
-          - devel
+          - "2.9"
+          - "2.10"
+          - "2.12"
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so it's accessible to the job
       - uses: actions/checkout@v2
 
+      - uses: actions/setup-python@v2
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install git+https://github.com/ansible/ansible.git@${{ matrix.ansible }}
-          pip install 'ansible-lint<5'
+          if [[ "${{ matrix.ansible }}" = "2.9" ]]; then
+              ansible_package=ansible
+          elif [[ "${{ matrix.ansible }}" = "2.10" ]]; then
+              ansible_package=ansible-base
+          else
+              ansible_package=ansible-core
+          fi
+          pip install $ansible_package==${{ matrix.ansible }}.* 'ansible-lint==5.*'
+
+      - name: Install Ansible Galaxy dependencies
+        run: |
           ansible-galaxy collection install pulp.squeezer
 
       - name: Linting code
@@ -35,9 +46,17 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pulp:
+          - "3.16"
+          - "3.18"
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so it's accessible to the job
       - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
 
       - name: Install dependencies
         run: |
@@ -48,6 +67,8 @@ jobs:
       - name: Run Pulp in one
         run: |
           tests/pulp-in-one.sh
+        env:
+          PULP_TAG: ${{ matrix.pulp }}
 
       # TODO: Use ansible-test to run these.
       - name: Running integration tests
