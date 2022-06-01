@@ -46,6 +46,12 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pulp:
+          - "3.16"
+          - "3.18"
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so it's accessible to the job
       - uses: actions/checkout@v2
@@ -61,6 +67,8 @@ jobs:
       - name: Run Pulp in one
         run: |
           tests/pulp-in-one.sh
+        env:
+          PULP_TAG: ${{ matrix.pulp }}
 
       # TODO: Use ansible-test to run these.
       - name: Running integration tests

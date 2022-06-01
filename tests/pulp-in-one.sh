@@ -8,6 +8,8 @@ set -o pipefail
 
 mkdir -p settings
 
+PULP_TAG=${PULP_TAG:3.18}
+
 cat << EOF > settings/settings.py
 CONTENT_ORIGIN='http://$(hostname):8080'
 ANSIBLE_API_HOSTNAME='http://$(hostname):8080'
@@ -21,7 +23,7 @@ docker run \
   --name pulp \
   --volume "$(pwd)/settings":/etc/pulp \
   --publish 8080:80 \
-  pulp/pulp:latest
+  pulp/pulp:$PULP_TAG
 
 # Wait for it to come up.
 attempts=0
