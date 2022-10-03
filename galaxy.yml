@@ -7,7 +7,7 @@ authors:
   - "Michał Nasiadka"
   - "Mark Goddard"
 dependencies:
-  "pulp.squeezer": "*"
+  "pulp.squeezer": "0.0.11"
 license:
   - "Apache-2.0"
 tags:
