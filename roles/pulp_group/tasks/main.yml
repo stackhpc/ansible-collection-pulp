@@ -1,0 +1,61 @@
+---
+
+- name: Get group list
+  uri:
+    url: "{{ pulp_group_url }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  no_log: true
+  register: groups_list_result
+
+- name: Set fact groupnames
+  set_fact:
+    groupnames: "{{ (groupnames | default([])) + [item.name] }}"
+  with_items: "{{ groups_list_result.json.results }}"
+
+- name: Create groups
+  uri:
+    url: "{{ pulp_group_url }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    status_code: 201
+    body:
+      name: "{{ item }}"
+    body_format: form-urlencoded
+  loop: "{{ pulp_groups_present | default([], true) }}"
+  no_log: true
+  register: result
+  when: 
+    - item not in groupnames
+  changed_when: result.status == 201
+
+- name: Initialise hrefs
+  set_fact:
+    hrefs: []
+
+- name: Set fact hrefs
+  set_fact:
+    hrefs: "{{ (hrefs|default([])) + [item.pulp_href] }}"
+  when: item.name in (pulp_groups_absent | default([], true))
+  with_items: "{{ groups_list_result.json.results }}"
+
+- name: Remove groups
+  uri:
+    url: "{{ pulp_url }}{{ item }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: DELETE
+    status_code: 204
+    body_format: form-urlencoded
+  loop: "{{ hrefs | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  no_log: true
+  register: result
+  changed_when: result.status == 204

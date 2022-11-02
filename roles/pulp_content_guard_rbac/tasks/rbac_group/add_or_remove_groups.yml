@@ -1,0 +1,77 @@
+---
+
+- name: Initialise facts
+  set_fact:
+    new_groups: []
+    current_groups: []
+
+- name: Get RBAC content guard list
+  uri:
+    url: "{{ pulp_rbac_cg_url }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  no_log: true
+  register: rbac_cg_list_result
+
+- name: Set fact new groups names
+  set_fact:
+    new_groups: "{{ (new_groups | default([])) + [item] }}"
+  with_items: "{{ content_guard.download_groups | default([]) }}"
+
+- name: get current groups associated with content guard
+  vars:
+    url_query: "[?name=='{{ content_guard.name }}'].groups"
+  set_fact:
+    current_groups_full: "{{ rbac_cg_list_result.json.results | json_query(url_query) | first | default([]) }}"
+
+- name: Set fact current groups names
+  set_fact:
+    current_groups: "{{ (current_groups | default([])) + [item.name] }}"
+  with_items: "{{ current_groups_full }}"
+
+- name: Add groups to RBAC content guards
+  vars:
+    url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
+  uri:
+    url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}add_role/"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    status_code: 201
+    body:
+      groups: "{{ item }}"
+      role: core.rbaccontentguard_downloader
+    body_format: form-urlencoded
+  loop: "{{ new_groups }}"
+  loop_control:
+    label: "{{ item }}"
+  # no_log: true
+  register: result
+  when: item not in current_groups
+  changed_when: result.status == 201
+
+- name: Remove groups from RBAC content guards
+  vars:
+    url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
+  uri:
+    url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}remove_role/"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    status_code: 201
+    body:
+      groups: "{{ item }}"
+      role: core.rbaccontentguard_downloader
+    body_format: form-urlencoded
+  loop: "{{ current_groups }}"
+  loop_control:
+    label: "{{ item }}"
+  no_log: true
+  register: result
+  when: item not in new_groups
+  changed_when: result.status == 201

@@ -1,0 +1,39 @@
+---
+# These user/group combinations definitely DO NOT exist on pulp server
+
+- name: Get group href from Pulp API
+  uri:
+    url: "{{ pulp_add_group_user_url }}?name={{ add_group }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  register: group_href_result
+
+- name: Fail when group cannot be unambiguosly returned from Pulp
+  fail:
+   msg: >
+     "Pulp API query: GET '{{ group_href_result.url }}' did not return
+     exactly one group. Groupname '{{ add_group }}' was found
+     '{{ group_href_result.json.count }}' times.
+     Groupnames should be unique and exist before associating users
+     with them"
+  when: group_href_result.json.count != 1
+
+# Will fail before we get here if the group doesn't exist or has
+# an ambiguous name
+- name: Add user to group
+  uri:
+    url: "{{ pulp_url }}{{ group_href_result.json.results[0].pulp_href }}users/"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    body:
+      username: "{{ user.username }}"
+    body_format: json
+    method: POST
+    force_basic_auth: true
+    # Always returns 201 even if user/group exists
+    status_code: 201
+  # If we get here we're always changing something
+  changed_when: true

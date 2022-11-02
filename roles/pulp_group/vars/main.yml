@@ -1,0 +1,2 @@
+---
+pulp_group_url: "{{ pulp_url }}/pulp/api/v3/groups/"

@@ -1,0 +1,68 @@
+---
+
+- name: Get RBAC content guard list
+  uri:
+    url: "{{ pulp_rbac_cg_url }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  no_log: true
+  register: rbac_cg_list_result
+
+- name: Set fact cgnames
+  set_fact:
+    cgnames: "{{ (cgnames | default([])) + [item.name] }}"
+  with_items: "{{ rbac_cg_list_result.json.results }}"
+
+- name: Create RBAC content guards
+  uri:
+    url: "{{ pulp_rbac_cg_url }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    status_code: 201
+    body:
+      name: "{{ item.name }}"
+    body_format: form-urlencoded
+  loop: "{{ pulp_content_guards_rbac_present | default([], true) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true
+  register: result
+  when: item.name not in cgnames
+  changed_when: result.status == 201
+
+- name: Add or remove group(s) from content guard
+  include_tasks: rbac_group/add_or_remove_groups.yml
+  loop: "{{ pulp_content_guards_rbac_present | default([], true) }}"
+  loop_control:
+    loop_var: content_guard
+
+- name: Initialise hrefs
+  set_fact:
+    hrefs: []
+
+- name: Set fact hrefs
+  set_fact:
+    hrefs: "{{ (hrefs | default([])) + [item.pulp_href] }}"
+  when: item.name in (pulp_content_guards_rbac_absent | default([], true))
+  with_items: "{{ rbac_cg_list_result.json.results }}"
+
+- name: Delete RBAC content guards
+  uri:
+    url: "{{ pulp_url }}{{ item }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: DELETE
+    status_code: 204
+    body_format: form-urlencoded
+  loop: "{{ hrefs | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  no_log: true
+  register: result
+  changed_when: result.status == 204

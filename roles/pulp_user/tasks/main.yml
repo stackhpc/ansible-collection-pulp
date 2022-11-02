@@ -1,0 +1,107 @@
+---
+- name: Get user list
+  uri:
+    url: "{{ pulp_user_url }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  no_log: true
+  register: users_list_result
+
+- name: Set fact usernames
+  set_fact:
+    usernames: "{{ (usernames | default([])) + [item.username] }}"
+  with_items: "{{ users_list_result.json.results }}"
+
+- name: Create users
+  vars:
+    pulp_users_present_nn: "{{ pulp_users_present if pulp_users_present is iterable else [] }}"
+  uri:
+    url: "{{ pulp_user_url }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: POST
+    status_code: 201
+    body:
+      username: "{{ item.username }}"
+      password: "{{ item.password | default(omit) }}"
+      first_name: "{{ item.first_name | default(omit) }}"
+      last_name: "{{ item.last_name | default(omit) }}"
+      email: "{{ item.email | default(omit) }}"
+      is_staff: "{{ item.is_staff | default(omit) }}"
+      is_active: "{{ item.is_active | default(omit) }}"
+    body_format: form-urlencoded
+  loop: "{{ pulp_users_present | default([], true) }}"
+  loop_control:
+    label: "{{ item.username }}"
+  no_log: true
+  register: result
+  when: item.username not in usernames
+  changed_when: result.status == 201
+
+- name: Update existing users
+  vars:
+    pulp_users_present_nn: "{{ pulp_users_present if pulp_users_present is iterable else [] }}"
+    url_query: "[?username=='{{ item.username }}'].pulp_href"
+  uri:
+    url: "{{ pulp_url }}{{ users_list_result.json.results | json_query(url_query) | first }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: PATCH
+    body:
+      username: "{{ item.username }}"
+      password: "{{ item.password | default(omit) }}"
+      first_name: "{{ item.first_name | default(omit) }}"
+      last_name: "{{ item.last_name | default(omit) }}"
+      email: "{{ item.email | default(omit) }}"
+      is_staff: "{{ item.is_staff | default(omit) }}"
+      is_active: "{{ item.is_active | default(omit) }}"
+    body_format: form-urlencoded
+  loop: "{{ pulp_users_present | default([], true) }}"
+  loop_control:
+    label: "{{ item.username }}"
+  no_log: true
+  register: result
+  when: item.username in usernames
+  changed_when: 
+  # The pulp API currently does not report when a change is made, so we must
+  # manually check
+  - result.json not in users_list_result.json.results
+  - result.status == 200
+
+- name: Add or remove user from group(s)
+  include_tasks: user_groups/add_or_remove_users.yml
+  # Noop if pulp_users_present is defined but empty
+  loop: "{{ pulp_users_present | default([], true) }}"
+  loop_control:
+    loop_var: user
+
+- name: Initialise hrefs
+  set_fact:
+    hrefs: []
+
+- name: Set fact hrefs
+  set_fact:
+    hrefs: "{{ (hrefs | default([])) + [item.pulp_href] }}"
+  when: item.username in (pulp_users_absent | default([], true))
+  with_items: "{{ users_list_result.json.results }}"
+
+- name: Delete users
+  uri:
+    url: "{{ pulp_url }}{{ item }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    force_basic_auth: true
+    method: DELETE
+    status_code: 204
+    body_format: form-urlencoded
+  loop: "{{ hrefs | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  no_log: true
+  register: result
+  changed_when: result.status == 204

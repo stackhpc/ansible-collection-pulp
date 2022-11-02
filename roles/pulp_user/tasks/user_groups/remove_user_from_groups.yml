@@ -1,0 +1,56 @@
+---
+# These user/group combinations definitely DO exist on pulp server
+
+- name: Get group href from Pulp API
+  uri:
+    url: "{{ pulp_add_group_user_url }}?name={{ remove_group }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  register: group_href_result
+
+# We should only return a single group here because we've just queried
+# from pulp API
+- name: Fail when group cannot be unambiguosly returned from Pulp API
+  fail:
+   msg: >
+     "Pulp API query: GET '{{ group_href_result.url }}' did not return
+     exactly one group. Groupname '{{ remove_group }}' was found
+     '{{ group_href_result.json.count }}' times.
+     Groupnames should be unique and exist before associating users
+     with them"
+  when: group_href_result.json.count != 1
+
+- name: Get user id from Pulp API
+  uri:
+    url: "{{ pulp_user_url }}?username={{ user.username }}"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  register: user_list_result
+
+- name: Fail when user id cannot be unambiguosly returned from Pulp API
+  fail:
+    msg: >
+     "Pulp API query: GET '{{ user_list_result.url }}' did not return
+     exactly one user id. User '{{ user.username }}' was found
+     '{{ user_list_result.json.count }}' times."
+  when: user_list_result.json.count != 1
+
+# Will fail before we get here if the group/user doesn't exist
+- name: Remove user from group
+  # DELETE {{ pulp_url }}/pulp/api/v3/groups/880/users/11/
+  uri:
+    url: "{{ pulp_url }}{{ group_href_result.json.results[0].pulp_href }}users/{{ user_list_result.json.results[0].id }}/"
+    user: "{{ pulp_admin_username }}"
+    password: "{{ pulp_admin_password }}"
+    method: DELETE
+    # Always returns 204 even if user/group doesn't exist
+    status_code: 204
+    force_basic_auth: true
+  # If we get here, we're always changing something
+  changed_when: true
