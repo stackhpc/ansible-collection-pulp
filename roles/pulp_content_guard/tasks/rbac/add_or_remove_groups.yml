@@ -8,8 +8,8 @@
 - name: Get RBAC content guard list
   uri:
     url: "{{ pulp_rbac_cg_url }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
@@ -37,8 +37,8 @@
     url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
   uri:
     url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}add_role/"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     force_basic_auth: true
     method: POST
     status_code: 201
@@ -59,8 +59,8 @@
     url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
   uri:
     url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}remove_role/"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     force_basic_auth: true
     method: POST
     status_code: 201

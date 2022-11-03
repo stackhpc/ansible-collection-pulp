@@ -5,3 +5,4 @@ pulp_password:
 pulp_validate_certs: true
 
 pulp_content_guard_x509_cert_guards: []
+pulp_content_guard_rbac: []

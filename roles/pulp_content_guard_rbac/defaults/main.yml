@@ -1,8 +1,0 @@
----
-pulp_url: https://localhost:8080
-pulp_admin_username: admin
-pulp_admin_password:
-pulp_validate_certs: true
-
-pulp_content_guards_rbac_present: []
-pulp_content_guards_rbac_absent: []
