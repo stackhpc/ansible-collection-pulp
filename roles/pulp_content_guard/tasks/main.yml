@@ -14,4 +14,4 @@
     label: "{{ item.name }}"
 
 - name: Ensure RBAC cert guards exist
-  include_tasks: rbac/rbac.yml
+  import_tasks: rbac/rbac.yml

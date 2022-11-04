@@ -15,17 +15,20 @@ Role variables
   * `name` (Required)
   * `description`
   * `ca_certificate`
-  * `state` (default is `present`. Setting this value to `absent` will delete the content guard if it exists)
+  * `state` (Default is `present`. Setting this value to `absent` will delete the content guard if it exists)
 * `pulp_content_guard_rbac`: List of groups to create/update/delete. Default is an empty list. Each item is a dict containing:
   * `name` (Required)
-  * `download_groups` (list of groups to to be added to this content guard with the download role) 
+  * `roles` List of dict containing:
+    * `role` (role name)
+    * `groups` List of groups to be assigned the role
   * `state` (default is `present`. Setting this value to `absent` will delete the content guard if it exists)
 
+Note: groups assigned roles are evaluated against the content guard's current list of roles returned from the Pulp server API. Removing a group from the list of groups defined under any role in `pulp_content_guard_rbac[*].roles` will result in the group being removed, and adding a group will result in it being added. Adding an empty `groups:` for a role will result in all groups being removed from that role.
 
 Example playbook
 ----------------
 
-```
+```yaml
 ---
 - name: Create Pulp content guards
   any_errors_fatal: True
@@ -49,19 +52,20 @@ Example playbook
       pulp_username: admin
       pulp_password: "{{ secrets_pulp_admin_password }}"
       pulp_content_guard_rbac:
-        - name: alex-test-rbac_cg-1
-          description: test-description-edited
-          download_groups:
-            - alex-test-group-1
-            - alex-test-group-2
+        - name: test_rbac_cg_1
+          description: test content guard number 1
+          roles:
+            - role: core.rbaccontentguard_downloader
+              groups:
+            - role: core.rbaccontentguard_viewer
           state: present
-        - name: alex-test-rbac_cg-2
-          description: test-description2-edited
-          download_groups:
-            - alex-test-group-2
-        - name: alex-test-rbac_cg-3
-          description: test-description3-edited
-          download_groups:
-            - alex-test-group-1
+        - name: test_rbac_cg_2
           state: absent
+        - name: test_rbac_cg_3
+          description: test content guard number 3
+          roles:
+            - role: core.rbaccontentguard_viewer
+              groups:
+                - test_group_1
+                - test_group_2
 ```

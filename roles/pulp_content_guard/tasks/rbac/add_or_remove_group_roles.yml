@@ -1,0 +1,65 @@
+---
+
+- name: Initialise facts
+  set_fact:
+    new_roles: []
+    current_roles: []
+
+- name: Get RBAC content guard list
+  uri:
+    url: "{{ pulp_rbac_cg_url }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  no_log: true
+  register: rbac_cg_list_result
+
+- name: Get current roles associated with content guard
+  vars:
+    url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
+  set_fact:
+    given_cg_href: "{{ rbac_cg_list_result.json.results | json_query(url_query) | first | default([]) }}"
+
+- name: Get role list
+  uri:
+    url: "{{ pulp_url }}{{ given_cg_href }}list_roles/"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  no_log: true
+  register: role_list_result
+
+- name: Remove unused roles
+  vars:
+    rolenames: "{{ content_guard.roles | default([]) | map(attribute='role') | list }}"
+    url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
+  uri:
+    url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}remove_role/"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    force_basic_auth: true
+    method: POST
+    status_code: 201
+    body:
+      role: "{{ item.role }}"
+      groups: "{{ item.groups }}"
+    body_format: form-urlencoded
+  # debug:
+  #   msg: "{{ item.role }}"
+  loop: "{{ role_list_result.json.roles }}"
+  # no_log: true
+  register: result
+  when:
+    - item.role not in rolenames
+    - item.users == []
+  changed_when: result.status == 201
+
+- name: Loop on new roles
+  include_tasks: add_or_remove_groups_from_role.yml
+  loop: "{{ content_guard.roles | default([]) }}"
+  loop_control:
+    loop_var: rbac_cg_new_role

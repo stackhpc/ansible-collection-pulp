@@ -3,8 +3,8 @@
 - name: Get user list
   uri:
     url: "{{ pulp_user_url }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
@@ -22,8 +22,8 @@
     usernames: "{{ users_list_result.json.results | map(attribute='username') | list }}"
   uri:
     url: "{{ pulp_user_url }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     force_basic_auth: true
     method: POST
     status_code: 201
@@ -41,7 +41,7 @@
     label: "{{ item.username }}"
   # no_log: true
   register: result
-  when: 
+  when:
     - item.username not in usernames
     - item.state | default('present') != 'absent'
   changed_when: result.status == 201
@@ -52,8 +52,8 @@
     url_query: "[?username=='{{ item.username }}'].pulp_href"
   uri:
     url: "{{ pulp_url }}{{ users_list_result.json.results | json_query(url_query) | first }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     force_basic_auth: true
     method: PATCH
     body:
@@ -70,14 +70,14 @@
     label: "{{ item.username }}"
   no_log: true
   register: result
-  when: 
+  when:
     - item.username in usernames
     - item.state | default('present') != 'absent'
-  changed_when: 
+  changed_when:
   # The pulp API currently does not report when a change is made, so we must
   # manually check
-  - result.json not in users_list_result.json.results
-  - result.status == 200
+    - result.json not in users_list_result.json.results
+    - result.status == 200
 
 - name: Add or remove user from group(s)
   include_tasks: user_groups/add_or_remove_users.yml
@@ -100,8 +100,8 @@
 - name: Delete users
   uri:
     url: "{{ pulp_url }}{{ item }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     force_basic_auth: true
     method: DELETE
     status_code: 204

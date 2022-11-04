@@ -7,8 +7,8 @@ Role variables
 --------------
 
 * `pulp_url`: URL of Pulp server. Default is `https://localhost:8080`
-* `pulp_admin_username`: Username used to access Pulp server. Default is `admin`
-* `pulp_admin_password`: Password used to access Pulp server. Default is unset
+* `pulp_username`: Username used to access Pulp server. Default is `admin`
+* `pulp_password`: Password used to access Pulp server. Default is unset
 * `pulp_users`: List of users to create/update/delete. Default is an empty list. Each item is a dict containing:
   * `username` (Required)
   * `password`
@@ -25,7 +25,7 @@ Note: User groups are evaluated against the user's current list of groups return
 Example playbook
 ----------------
 
-```
+```yaml
 ---
 - name: Create and delete users
   gather_facts: True
@@ -33,8 +33,8 @@ Example playbook
   roles:
     - role: stackhpc.pulp.pulp_user
       pulp_url: https://pulp.example.com
-      pulp_admin_username: admin
-      pulp_admin_password: "{{ secrets_pulp_admin_password }}"
+      pulp_username: admin
+      pulp_password: "{{ secrets_pulp_admin_password }}"
       pulp_users:
         - username: example-user-1
           password: correct horse battery staple

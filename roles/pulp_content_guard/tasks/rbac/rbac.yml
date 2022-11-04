@@ -11,6 +11,10 @@
   no_log: true
   register: rbac_cg_list_result
 
+- name: Initialise remove_rbac_cg
+  set_fact:
+    remove_rbac_cg: []
+
 - name: Set fact remove_rbac_cg
   set_fact:
     remove_rbac_cg: "{{ (remove_rbac_cg | default([])) + [item.name] }}"
@@ -32,11 +36,9 @@
       description: "{{ item.description | default(omit) }}"
     body_format: form-urlencoded
   loop: "{{ pulp_content_guard_rbac | default([], true) }}"
-  loop_control:
-    label: "{{ item.name }}"
   # no_log: true
   register: result
-  when: 
+  when:
     - item.name not in rbaccgnames
     - item.state | default('present') != 'absent'
   changed_when: result.status == 201
@@ -58,17 +60,17 @@
   loop: "{{ pulp_content_guard_rbac | default([], true) }}"
   # no_log: true
   register: result
-  when: 
+  when:
     - item.name in rbaccgnames
     - item.state | default('present') != 'absent'
-  changed_when: 
+  changed_when:
   # The pulp API currently does not report when a change is made, so we must
   # manually check
-  - result.json not in rbac_cg_list_result.json.results
-  - result.status == 200
+    - result.json not in rbac_cg_list_result.json.results
+    - result.status == 200
 
-- name: Add or remove group(s) from content guard
-  include_tasks: add_or_remove_groups.yml
+- name: Add or remove group roles from content guard
+  include_tasks: add_or_remove_group_roles.yml
   loop: "{{ pulp_content_guard_rbac | default([], true) }}"
   loop_control:
     loop_var: content_guard

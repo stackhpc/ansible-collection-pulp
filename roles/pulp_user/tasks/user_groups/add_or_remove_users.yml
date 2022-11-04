@@ -3,8 +3,8 @@
 - name: Get all groups that user belongs to
   uri:
     url: "{{ pulp_user_url }}?username={{ user.username }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true

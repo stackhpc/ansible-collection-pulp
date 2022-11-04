@@ -4,8 +4,8 @@
 - name: Get group href from Pulp API
   uri:
     url: "{{ pulp_add_group_user_url }}?name={{ remove_group }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
@@ -15,19 +15,19 @@
 # from pulp API
 - name: Fail when group cannot be unambiguosly returned from Pulp API
   fail:
-   msg: >
-     "Pulp API query: GET '{{ group_href_result.url }}' did not return
-     exactly one group. Groupname '{{ remove_group }}' was found
-     '{{ group_href_result.json.count }}' times.
-     Groupnames should be unique and exist before associating users
-     with them"
+    msg: >
+      "Pulp API query: GET '{{ group_href_result.url }}' did not return
+      exactly one group. Groupname '{{ remove_group }}' was found
+      '{{ group_href_result.json.count }}' times.
+      Groupnames should be unique and exist before associating users
+      with them"
   when: group_href_result.json.count != 1
 
 - name: Get user id from Pulp API
   uri:
     url: "{{ pulp_user_url }}?username={{ user.username }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
@@ -46,8 +46,8 @@
   # DELETE {{ pulp_url }}/pulp/api/v3/groups/880/users/11/
   uri:
     url: "{{ pulp_url }}{{ group_href_result.json.results[0].pulp_href }}users/{{ user_list_result.json.results[0].id }}/"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     method: DELETE
     # Always returns 204 even if user/group doesn't exist
     status_code: 204

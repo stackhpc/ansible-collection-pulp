@@ -3,8 +3,8 @@
 - name: Get group list
   uri:
     url: "{{ pulp_group_url }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
@@ -22,8 +22,8 @@
     groupnames: "{{ groups_list_result.json.results | map(attribute='name') | list }}"
   uri:
     url: "{{ pulp_group_url }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     force_basic_auth: true
     method: POST
     status_code: 201
@@ -33,7 +33,7 @@
   loop: "{{ pulp_groups | default([], true) }}"
   # no_log: true
   register: result
-  when: 
+  when:
     - item.name not in groupnames
     - item.state | default('present') != 'absent'
   changed_when: result.status == 201
@@ -51,8 +51,8 @@
 - name: Remove groups
   uri:
     url: "{{ pulp_url }}{{ item }}"
-    user: "{{ pulp_admin_username }}"
-    password: "{{ pulp_admin_password }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
     force_basic_auth: true
     method: DELETE
     status_code: 204
