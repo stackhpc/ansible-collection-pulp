@@ -7,30 +7,22 @@
 
 - name: Get RBAC content guard list
   uri:
-    url: "{{ pulp_rbac_cg_url }}"
+    url: "{{ pulp_rbac_cg_url }}?name={{ content_guard.name }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
-  no_log: true
-  register: rbac_cg_list_result
-
-- name: Get current roles associated with content guard
-  vars:
-    url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
-  set_fact:
-    given_cg_href: "{{ rbac_cg_list_result.json.results | json_query(url_query) | first | default([]) }}"
+  register: rbac_cg_result
 
 - name: Get role list
   uri:
-    url: "{{ pulp_url }}{{ given_cg_href }}list_roles/"
+    url: "{{ pulp_url }}{{ (rbac_cg_result.json.results | first).pulp_href }}list_roles/"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
-  no_log: true
   register: role_list_result
 
 - name: Remove unused roles
@@ -38,7 +30,7 @@
     rolenames: "{{ content_guard.roles | default([]) | map(attribute='role') | list }}"
     url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
   uri:
-    url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}remove_role/"
+    url: "{{ pulp_url }}{{ (rbac_cg_result.json.results | first).pulp_href }}remove_role/"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
@@ -48,10 +40,7 @@
       role: "{{ item.role }}"
       groups: "{{ item.groups }}"
     body_format: form-urlencoded
-  # debug:
-  #   msg: "{{ item.role }}"
   loop: "{{ role_list_result.json.roles }}"
-  # no_log: true
   register: result
   when:
     - item.role not in rolenames

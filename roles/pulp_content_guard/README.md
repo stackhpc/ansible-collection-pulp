@@ -16,7 +16,7 @@ Role variables
   * `description`
   * `ca_certificate`
   * `state` (Default is `present`. Setting this value to `absent` will delete the content guard if it exists)
-* `pulp_content_guard_rbac`: List of groups to create/update/delete. Default is an empty list. Each item is a dict containing:
+* `pulp_content_guard_rbac`: List of RBAC content guards to create/update/delete. Default is an empty list. Each item is a dict containing:
   * `name` (Required)
   * `roles` List of dict containing:
     * `role` (role name)

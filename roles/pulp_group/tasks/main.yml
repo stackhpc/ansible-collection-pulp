@@ -8,7 +8,6 @@
     method: GET
     status_code: 200
     force_basic_auth: true
-  no_log: true
   register: groups_list_result
 
 - name: Set fact remove_groups
@@ -31,7 +30,6 @@
       name: "{{ item.name }}"
     body_format: form-urlencoded
   loop: "{{ pulp_groups | default([], true) }}"
-  # no_log: true
   register: result
   when:
     - item.name not in groupnames
@@ -58,6 +56,5 @@
     status_code: 204
     body_format: form-urlencoded
   loop: "{{ hrefs | default([]) }}"
-  no_log: true
   register: result
   changed_when: result.status == 204

@@ -8,7 +8,6 @@
     method: GET
     status_code: 200
     force_basic_auth: true
-  no_log: true
   register: rbac_cg_list_result
 
 - name: Initialise remove_rbac_cg
@@ -36,7 +35,6 @@
       description: "{{ item.description | default(omit) }}"
     body_format: form-urlencoded
   loop: "{{ pulp_content_guard_rbac | default([], true) }}"
-  # no_log: true
   register: result
   when:
     - item.name not in rbaccgnames
@@ -58,7 +56,6 @@
       description: "{{ item.description | default(omit) }}"
     body_format: form-urlencoded
   loop: "{{ pulp_content_guard_rbac | default([], true) }}"
-  # no_log: true
   register: result
   when:
     - item.name in rbaccgnames
@@ -96,6 +93,5 @@
     status_code: 204
     body_format: form-urlencoded
   loop: "{{ hrefs | default([]) }}"
-  no_log: true
   register: result
   changed_when: result.status == 204

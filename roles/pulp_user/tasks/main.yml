@@ -8,7 +8,6 @@
     method: GET
     status_code: 200
     force_basic_auth: true
-  no_log: true
   register: users_list_result
 
 - name: Set fact remove_users
@@ -39,7 +38,6 @@
   loop: "{{ pulp_users | default([], true) }}"
   loop_control:
     label: "{{ item.username }}"
-  # no_log: true
   register: result
   when:
     - item.username not in usernames
@@ -68,7 +66,6 @@
   loop: "{{ pulp_users | default([], true) }}"
   loop_control:
     label: "{{ item.username }}"
-  no_log: true
   register: result
   when:
     - item.username in usernames
@@ -107,6 +104,5 @@
     status_code: 204
     body_format: form-urlencoded
   loop: "{{ hrefs | default([]) }}"
-  no_log: true
   register: result
   changed_when: result.status == 204

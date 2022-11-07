@@ -7,10 +7,8 @@
     current_groups: "{{ role_list_result.json.roles | json_query(role_query) | first | default([]) }}"
 
 - name: Add new group to role
-  vars:
-    url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
   uri:
-    url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}add_role/"
+    url: "{{ pulp_url }}{{ (rbac_cg_result.json.results | first).pulp_href }}add_role/"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
@@ -20,17 +18,14 @@
       role: "{{ rbac_cg_new_role.role }}"
       groups: "{{ item }}"
     body_format: form-urlencoded
-  # no_log: true
   register: result
   loop: "{{ rbac_cg_new_role.groups | default([], true) }}"
   when: item not in current_groups
   changed_when: result.status == 201
 
 - name: Remove old group from role
-  vars:
-    url_query: "[?name=='{{ content_guard.name }}'].pulp_href"
   uri:
-    url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}remove_role/"
+    url: "{{ pulp_url }}{{ (rbac_cg_result.json.results | first).pulp_href }}remove_role/"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
@@ -40,7 +35,6 @@
       role: "{{ rbac_cg_new_role.role }}"
       groups: "{{ item }}"
     body_format: form-urlencoded
-  # no_log: true
   register: result
   loop: "{{ current_groups }}"
   when: item not in (rbac_cg_new_role.groups | default([]))
