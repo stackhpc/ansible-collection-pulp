@@ -13,7 +13,7 @@
 - name: Set fact remove_groups
   set_fact:
     remove_groups: "{{ (remove_groups | default([])) + [item.name] }}"
-  when: item.state | default('present') == 'absent'
+  when: item.state is defined and item.state == 'absent'
   with_items: "{{ pulp_groups }}"
 
 - name: Create groups
@@ -29,11 +29,11 @@
     body:
       name: "{{ item.name }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_groups | default([], true) }}"
+  loop: "{{ pulp_groups }}"
   register: result
   when:
     - item.name not in groupnames
-    - item.state | default('present') != 'absent'
+    - item.state is not defined or item.state != 'absent'
   changed_when: result.status == 201
 
 - name: Initialise hrefs
@@ -55,6 +55,6 @@
     method: DELETE
     status_code: 204
     body_format: form-urlencoded
-  loop: "{{ hrefs | default([]) }}"
+  loop: "{{ hrefs }}"
   register: result
   changed_when: result.status == 204

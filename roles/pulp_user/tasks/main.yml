@@ -13,7 +13,7 @@
 - name: Set fact remove_users
   set_fact:
     remove_users: "{{ (remove_users | default([])) + [item.username] }}"
-  when: item.state | default('present') == 'absent'
+  when: item.state is defined and item.state == 'absent'
   with_items: "{{ pulp_users }}"
 
 - name: Create users
@@ -28,20 +28,20 @@
     status_code: 201
     body:
       username: "{{ item.username }}"
-      password: "{{ item.password | default(omit) }}"
-      first_name: "{{ item.first_name | default(omit) }}"
-      last_name: "{{ item.last_name | default(omit) }}"
-      email: "{{ item.email | default(omit) }}"
-      is_staff: "{{ item.is_staff | default(omit) }}"
-      is_active: "{{ item.is_active | default(omit) }}"
+      password: "{{ item.password | default(None) }}"
+      first_name: "{{ item.first_name | default(None) }}"
+      last_name: "{{ item.last_name | default(None) }}"
+      email: "{{ item.email | default(None) }}"
+      is_staff: "{{ item.is_staff | default(None) }}"
+      is_active: "{{ item.is_active | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_users | default([], true) }}"
+  loop: "{{ pulp_users }}"
   loop_control:
     label: "{{ item.username }}"
   register: result
   when:
     - item.username not in usernames
-    - item.state | default('present') != 'absent'
+    - item.state is not defined or item.state != 'absent'
   changed_when: result.status == 201
 
 - name: Update existing users
@@ -56,20 +56,20 @@
     method: PATCH
     body:
       username: "{{ item.username }}"
-      password: "{{ item.password | default(omit) }}"
-      first_name: "{{ item.first_name | default(omit) }}"
-      last_name: "{{ item.last_name | default(omit) }}"
-      email: "{{ item.email | default(omit) }}"
-      is_staff: "{{ item.is_staff | default(omit) }}"
-      is_active: "{{ item.is_active | default(omit) }}"
+      password: "{{ item.password | default(None) }}"
+      first_name: "{{ item.first_name | default(None) }}"
+      last_name: "{{ item.last_name | default(None) }}"
+      email: "{{ item.email | default(None) }}"
+      is_staff: "{{ item.is_staff | default(None) }}"
+      is_active: "{{ item.is_active | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_users | default([], true) }}"
+  loop: "{{ pulp_users }}"
   loop_control:
     label: "{{ item.username }}"
   register: result
   when:
     - item.username in usernames
-    - item.state | default('present') != 'absent'
+    - item.state is not defined or item.state != 'absent'
   changed_when:
   # The pulp API currently does not report when a change is made, so we must
   # manually check
@@ -79,8 +79,8 @@
 - name: Add or remove user from group(s)
   include_tasks: user_groups/add_or_remove_users.yml
   # Noop if pulp_users is defined but empty
-  loop: "{{ pulp_users | default([], true) }}"
-  when: (user.state | default('present')) != 'absent'
+  loop: "{{ pulp_users }}"
+  when: item.state is not defined or item.state != 'absent'
   loop_control:
     loop_var: user
 
@@ -103,6 +103,6 @@
     method: DELETE
     status_code: 204
     body_format: form-urlencoded
-  loop: "{{ hrefs | default([]) }}"
+  loop: "{{ hrefs }}"
   register: result
   changed_when: result.status == 204

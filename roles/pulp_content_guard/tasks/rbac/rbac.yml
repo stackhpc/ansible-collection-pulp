@@ -17,7 +17,7 @@
 - name: Set fact remove_rbac_cg
   set_fact:
     remove_rbac_cg: "{{ (remove_rbac_cg | default([])) + [item.name] }}"
-  when: item.state | default('present') == 'absent'
+  when: item.state is defined and item.state == 'absent'
   with_items: "{{ pulp_content_guard_rbac }}"
 
 - name: Create RBAC content guards
@@ -32,13 +32,13 @@
     status_code: 201
     body:
       name: "{{ item.name }}"
-      description: "{{ item.description | default(omit) }}"
+      description: "{{ item.description | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_content_guard_rbac | default([], true) }}"
+  loop: "{{ pulp_content_guard_rbac }}"
   register: result
   when:
     - item.name not in rbaccgnames
-    - item.state | default('present') != 'absent'
+    - item.state is not defined or item.state != 'absent'
   changed_when: result.status == 201
 
 - name: Update existing rbac content guards
@@ -53,13 +53,13 @@
     method: PATCH
     body:
       name: "{{ item.name }}"
-      description: "{{ item.description | default(omit) }}"
+      description: "{{ item.description | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_content_guard_rbac | default([], true) }}"
+  loop: "{{ pulp_content_guard_rbac }}"
   register: result
   when:
     - item.name in rbaccgnames
-    - item.state | default('present') != 'absent'
+    - item.state is not defined or item.state != 'absent'
   changed_when:
   # The pulp API currently does not report when a change is made, so we must
   # manually check
@@ -71,7 +71,7 @@
   loop: "{{ pulp_content_guard_rbac | default([], true) }}"
   loop_control:
     loop_var: content_guard
-  when: content_guard.state | default('present') != 'absent'
+  when: not (content_guard.state is defined and content_guard.state == 'absent')
 
 - name: Initialise hrefs
   set_fact:
@@ -92,6 +92,6 @@
     method: DELETE
     status_code: 204
     body_format: form-urlencoded
-  loop: "{{ hrefs | default([]) }}"
+  loop: "{{ hrefs }}"
   register: result
   changed_when: result.status == 204
