@@ -1,0 +1,119 @@
+---
+- name: Test group
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+  tasks:
+    - name: Query pulp status
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/status/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        body_format: json
+        status_code: 200
+        force_basic_auth: true
+      register: status_result
+
+    - name: Exit if version < 3.17
+      meta: end_play
+      vars:
+        query: "[?component=='core'].version"
+      when: status_result.json.versions | json_query(query) | first is version('3.17', '<')
+
+    - name: Query groups
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        body_format: json
+        status_code: 200
+        force_basic_auth: true
+      register: groups_result
+
+    - include_role:
+        name: pulp_group
+      vars:
+        pulp_groups:
+          - name: automated_test_group1
+            state: present
+          - name: automated_test_group2
+            state: present
+
+    - name: Query group 1
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/?name=automated_test_group1"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: group_1_result
+
+    - name: Query group 2
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/?name=automated_test_group2"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: group_2_result
+
+    - name: Verify group creation
+      assert:
+        that:
+          - group_1_result.json.count == 1
+          - group_1_result.json.results[0].name == "automated_test_group1"
+          - group_2_result.json.count == 1
+          - group_2_result.json.results[0].name == "automated_test_group2"
+
+    # Update group status.
+    - include_role:
+        name: pulp_group
+      vars:
+        pulp_groups:
+          - name: automated_test_group1
+            state: present
+          - name: automated_test_group2
+            state: absent
+
+    - name: Query group 1
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/?name=automated_test_group1"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: group_1_result
+
+    - name: Query group 2
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/?name=automated_test_group2"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: group_2_result
+
+    - name: Verify group creation
+      assert:
+        that:
+          - group_1_result.json.count == 1
+          - group_1_result.json.results[0].name == "automated_test_group1"
+          - group_2_result.json.count == 0
+
+    - include_role:
+        name: pulp_group
+      vars:
+        pulp_groups:
+          - name: automated_test_group1
+            state: absent
+          - name: automated_test_group2
+            state: absent

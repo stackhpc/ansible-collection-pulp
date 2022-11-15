@@ -1,0 +1,146 @@
+---
+- name: Test user
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - name: Query pulp status
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/status/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        body_format: json
+        status_code: 200
+        force_basic_auth: true
+      register: status_result
+
+    - name: Exit if version < 3.17
+      meta: end_play
+      vars:
+        query: "[?component=='core'].version"
+      when: status_result.json.versions | json_query(query) | first is version('3.17', '<')
+
+    - name: Query groups
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        body_format: json
+        status_code: 200
+        force_basic_auth: true
+      register: groups_result
+
+    - name: Create groups
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: POST
+        body:
+          name: "{{ item }}"
+        body_format: json
+        status_code: 201
+        force_basic_auth: true
+      loop:
+        - test_group1
+        - test_group2
+      when: item not in groups_result.json.results | map(attribute='name') | list
+
+    - include_role:
+        name: pulp_user
+      vars:
+        pulp_users:
+          - username: test_user_2
+            password: correct horse battery staple
+            groups:
+              - test_group1
+          - username: test_user_3
+            password: test user three password
+
+    - name: Query user 2
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user_2"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: user_2_result
+
+    - name: Query user 3
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user_3"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: user_3_result
+
+    - name: Verify user creation
+      assert:
+        that:
+          - user_2_result.json.count == 1
+          - user_2_result.json.results[0].username == "test_user_2"
+          - user_2_result.json.results[0].groups | length == 1
+          - user_2_result.json.results[0].groups[0].name == "test_group1"
+          - user_3_result.json.count == 1
+          - user_3_result.json.results[0].username == "test_user_3"
+          - user_3_result.json.results[0].groups | length == 0
+
+    # Update users
+    - include_role:
+        name: pulp_user
+      vars:
+        pulp_users:
+          - username: test_user_2
+            password: correct horse battery staple
+            groups:
+              - test_group2
+          - username: test_user_3
+            state: absent
+
+    - name: Query user 2
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user_2"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: user_2_result
+
+    - name: Query user 3
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user_3"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: user_3_result
+
+    - name: Verify user update
+      assert:
+        that:
+          - user_2_result.json.count == 1
+          - user_2_result.json.results[0].username == "test_user_2"
+          - user_2_result.json.results[0].groups | length == 1
+          - user_2_result.json.results[0].groups[0].name == "test_group2"
+          - user_3_result.json.count == 0
+
+    - name: Cleanup
+      include_role:
+        name: pulp_user
+      vars:
+        pulp_users:
+          - username: test_user_2
+            state: absent
+          - username: test_user_3
+            state: absent

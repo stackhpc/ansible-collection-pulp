@@ -1,0 +1,2 @@
+---
+pulp_rbac_cg_url: "{{ pulp_url }}/pulp/api/v3/contentguards/core/rbac/"

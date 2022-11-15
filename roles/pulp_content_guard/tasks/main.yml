@@ -12,3 +12,6 @@
   with_items: "{{ pulp_content_guard_x509_cert_guards }}"
   loop_control:
     label: "{{ item.name }}"
+
+- name: Ensure RBAC cert guards exist
+  import_tasks: rbac/rbac.yml

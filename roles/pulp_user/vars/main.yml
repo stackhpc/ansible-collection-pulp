@@ -1,0 +1,3 @@
+---
+pulp_user_url: "{{ pulp_url }}/pulp/api/v3/users/"
+pulp_add_group_user_url: "{{ pulp_url }}/pulp/api/v3/groups/"

@@ -25,7 +25,7 @@ Role variables
 Example playbook
 ----------------
 
-```
+```yaml
 ---
 - name: Manage Pulp distributions
   any_errors_fatal: True

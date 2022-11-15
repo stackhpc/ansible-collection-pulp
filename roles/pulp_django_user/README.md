@@ -22,7 +22,7 @@ Note: User groups are evauluated against the user's current list of groups retur
 Example playbook
 ----------------
 
-```
+```yaml
 ---
 - name: Create Pulp Django users
   gather_facts: True

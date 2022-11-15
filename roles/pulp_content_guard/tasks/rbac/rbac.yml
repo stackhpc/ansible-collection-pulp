@@ -1,0 +1,97 @@
+---
+
+- name: Get RBAC content guard list
+  uri:
+    url: "{{ pulp_rbac_cg_url }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    method: GET
+    status_code: 200
+    force_basic_auth: true
+  register: rbac_cg_list_result
+
+- name: Initialise remove_rbac_cg
+  set_fact:
+    remove_rbac_cg: []
+
+- name: Set fact remove_rbac_cg
+  set_fact:
+    remove_rbac_cg: "{{ (remove_rbac_cg | default([])) + [item.name] }}"
+  when: item.state is defined and item.state == 'absent'
+  with_items: "{{ pulp_content_guard_rbac }}"
+
+- name: Create RBAC content guards
+  vars:
+    rbaccgnames: "{{ rbac_cg_list_result.json.results | map(attribute='name') | list }}"
+  uri:
+    url: "{{ pulp_rbac_cg_url }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    force_basic_auth: true
+    method: POST
+    status_code: 201
+    body:
+      name: "{{ item.name }}"
+      description: "{{ item.description | default(None) }}"
+    body_format: form-urlencoded
+  loop: "{{ pulp_content_guard_rbac }}"
+  register: result
+  when:
+    - item.name not in rbaccgnames
+    - item.state is not defined or item.state != 'absent'
+  changed_when: result.status == 201
+
+- name: Update existing rbac content guards
+  vars:
+    rbaccgnames: "{{ rbac_cg_list_result.json.results | map(attribute='name') | list }}"
+    url_query: "[?name=='{{ item.name }}'].pulp_href"
+  uri:
+    url: "{{ pulp_url }}{{ rbac_cg_list_result.json.results | json_query(url_query) | first }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    force_basic_auth: true
+    method: PATCH
+    body:
+      name: "{{ item.name }}"
+      description: "{{ item.description | default(None) }}"
+    body_format: form-urlencoded
+  loop: "{{ pulp_content_guard_rbac }}"
+  register: result
+  when:
+    - item.name in rbaccgnames
+    - item.state is not defined or item.state != 'absent'
+  changed_when:
+  # The pulp API currently does not report when a change is made, so we must
+  # manually check
+    - result.json not in rbac_cg_list_result.json.results
+    - result.status == 200
+
+- name: Add or remove group roles from content guard
+  include_tasks: add_or_remove_group_roles.yml
+  loop: "{{ pulp_content_guard_rbac | default([], true) }}"
+  loop_control:
+    loop_var: content_guard
+  when: not (content_guard.state is defined and content_guard.state == 'absent')
+
+- name: Initialise hrefs
+  set_fact:
+    hrefs: []
+
+- name: Set fact hrefs
+  set_fact:
+    hrefs: "{{ (hrefs | default([])) + [item.pulp_href] }}"
+  when: item.name in (remove_rbac_cg | default([]))
+  with_items: "{{ rbac_cg_list_result.json.results }}"
+
+- name: Delete RBAC content guards
+  uri:
+    url: "{{ pulp_url }}{{ item }}"
+    user: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    force_basic_auth: true
+    method: DELETE
+    status_code: 204
+    body_format: form-urlencoded
+  loop: "{{ hrefs }}"
+  register: result
+  changed_when: result.status == 204

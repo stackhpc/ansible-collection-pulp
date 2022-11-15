@@ -1,0 +1,163 @@
+---
+- name: Test content guard rbac
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+
+    - name: Query pulp status
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/status/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        body_format: json
+        status_code: 200
+        force_basic_auth: true
+      register: status_result
+
+    - name: Exit if version < 3.17
+      meta: end_play
+      vars:
+        query: "[?component=='core'].version"
+      when: status_result.json.versions | json_query(query) | first is version('3.17', '<')
+
+    - name: Query groups
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        body_format: json
+        status_code: 200
+        force_basic_auth: true
+      register: groups_result
+
+    - name: Create groups
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/groups/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: POST
+        body:
+          name: "{{ item }}"
+        body_format: json
+        status_code: 201
+        force_basic_auth: true
+      loop:
+        - test_group1
+        - test_group2
+      when: item not in groups_result.json.results | map(attribute='name') | list
+
+    - include_role:
+        name: pulp_content_guard
+      vars:
+        pulp_content_guard_rbac:
+          - name: test-rbac_cg-1
+            roles:
+              - role: core.rbaccontentguard_downloader
+                groups:
+                  - test_group1
+                  - test_group2
+            state: present
+          - name: test-rbac_cg-2
+            roles:
+              - role: core.rbaccontentguard_downloader
+                groups:
+                  - test_group1
+                  - test_group2
+            state: present
+
+    - name: Query rbac content guard list
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/contentguards/core/rbac/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: rbac_cg_list
+
+    - name: Evaluate results for test-rbac_cg-1
+      vars:
+        query: "[?name=='test-rbac_cg-1']"
+      assert:
+        that:
+          - rbac_cg_list.json.results | json_query(query) | length == 1
+          - (rbac_cg_list.json.results | json_query(query) | first).name == 'test-rbac_cg-1'
+          - (rbac_cg_list.json.results | json_query(query) | first).groups | length == 2
+          - (rbac_cg_list.json.results | json_query(query) | first).groups[0].name in ['test_group1', 'test_group2']
+          - (rbac_cg_list.json.results | json_query(query) | first).groups[1].name in ['test_group1', 'test_group2']
+          - >
+              (rbac_cg_list.json.results | json_query(query) | first).groups[0].name !=
+              (rbac_cg_list.json.results | json_query(query) | first).groups[1].name
+
+    - name: Evaluate results for test-rbac_cg-2
+      vars:
+        query: "[?name=='test-rbac_cg-2']"
+      assert:
+        that:
+          - rbac_cg_list.json.results | json_query(query) | length == 1
+          - (rbac_cg_list.json.results | json_query(query) | first).name == 'test-rbac_cg-2'
+          - (rbac_cg_list.json.results | json_query(query) | first).groups | length == 2
+          - (rbac_cg_list.json.results | json_query(query) | first).groups[0].name in ['test_group1', 'test_group2']
+          - (rbac_cg_list.json.results | json_query(query) | first).groups[1].name in ['test_group1', 'test_group2']
+          - >
+              (rbac_cg_list.json.results | json_query(query) | first).groups[0].name !=
+              (rbac_cg_list.json.results | json_query(query) | first).groups[1].name
+
+    # update content guards
+    - include_role:
+        name: pulp_content_guard
+      vars:
+        pulp_content_guard_rbac:
+          - name: test-rbac_cg-1
+            roles:
+              - role: core.rbaccontentguard_downloader
+                groups:
+                  - test_group1
+            state: present
+          - name: test-rbac_cg-2
+            state: absent
+
+    - name: Query rbac content guard list
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/contentguards/core/rbac/"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: rbac_cg_list
+
+    - name: Evaluate results for test-rbac_cg-1
+      vars:
+        query: "[?name=='test-rbac_cg-1']"
+      assert:
+        that:
+          - rbac_cg_list.json.results | json_query(query) | length == 1
+          - (rbac_cg_list.json.results | json_query(query) | first).name == 'test-rbac_cg-1'
+          - (rbac_cg_list.json.results | json_query(query) | first).groups | length == 1
+          - (rbac_cg_list.json.results | json_query(query) | first).groups[0].name == 'test_group1'
+
+
+    - name: Evaluate results for test-rbac_cg-2
+      vars:
+        query: "[?name=='test-rbac_cg-2']"
+      assert:
+        that:
+          - rbac_cg_list.json.results | json_query(query) | length == 0
+    
+    - name: Cleanup
+      include_role:
+        name: pulp_content_guard
+      vars:
+        pulp_content_guard_rbac:
+          - name: test-rbac_cg-1
+            state: absent
+          - name: test-rbac_cg-2
+            state: absent
