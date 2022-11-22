@@ -5,11 +5,11 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ item.name }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_rpm_repos }}"
+    name: "{{ pulp_repository_rpm_repos[repository_index].name }}"
+    state: "{{ pulp_repository_rpm_repos[repository_index].state }}"
+  loop: "{{ pulp_repository_rpm_repos | map(attribute='name') }}"
   loop_control:
-    label: "{{ item.name }}"
+    index_var: repository_index"
 
 - name: Setup RPM remotes
   pulp.squeezer.rpm_remote:
@@ -17,24 +17,26 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ item.name }}-remote"
-    ca_cert: "{{ item.ca_cert | default(omit) }}"
-    client_cert: "{{ item.client_cert | default(omit) }}"
-    client_key: "{{ item.client_key | default(omit) }}"
-    download_concurrency: "{{ item.download_concurrency | default(omit) }}"
-    policy: "{{ item.policy | default(omit) }}"
-    proxy_url: "{{ item.proxy_url | default(omit) }}"
-    proxy_username: "{{ item.proxy_username | default(omit) }}"
-    proxy_password: "{{ item.proxy_password | default(omit) }}"
-    remote_username: "{{ item.remote_username | default(omit) }}"
-    remote_password: "{{ item.remote_password | default(omit) }}"
-    tls_validation: "{{ item.tls_validation | default(omit) }}"
-    url: "{{ item.url | default(omit) }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_rpm_repos }}"
-  when: item.state == "absent" or item.url is defined
+    name: "{{ pulp_repository_rpm_repos[repository_index].name }}-remote"
+    ca_cert: "{{ pulp_repository_rpm_repos[repository_index].ca_cert | default(omit) }}"
+    client_cert: "{{ pulp_repository_rpm_repos[repository_index].client_cert | default(omit) }}"
+    client_key: "{{ pulp_repository_rpm_repos[repository_index].client_key | default(omit) }}"
+    download_concurrency: "{{ pulp_repository_rpm_repos[repository_index].download_concurrency | default(omit) }}"
+    policy: "{{ pulp_repository_rpm_repos[repository_index].policy | default(omit) }}"
+    proxy_url: "{{ pulp_repository_rpm_repos[repository_index].proxy_url | default(omit) }}"
+    proxy_username: "{{ pulp_repository_rpm_repos[repository_index].proxy_username | default(omit) }}"
+    proxy_password: "{{ pulp_repository_rpm_repos[repository_index].proxy_password | default(omit) }}"
+    remote_username: "{{ pulp_repository_rpm_repos[repository_index].remote_username | default(omit) }}"
+    remote_password: "{{ pulp_repository_rpm_repos[repository_index].remote_password | default(omit) }}"
+    tls_validation: "{{ pulp_repository_rpm_repos[repository_index].tls_validation | default(omit) }}"
+    url: "{{ pulp_repository_rpm_repos[repository_index].url | default(omit) }}"
+    state: "{{ pulp_repository_rpm_repos[repository_index].state }}"
+  when: >
+    pulp_repository_rpm_repos[repository_index].state == "absent" or 
+    pulp_repository_rpm_repos[repository_index].url is defined
+  loop: "{{ pulp_repository_rpm_repos | map(attribute='name') }}"
   loop_control:
-    label: "{{ item.name }}"
+    index_var: repository_index"
 
 - name: Sync RPM remotes into repositories
   pulp.squeezer.rpm_sync:
@@ -42,12 +44,12 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    repository: "{{ item.name }}"
-    remote: "{{ item.name }}-remote"
-    sync_policy: "{{ item.sync_policy | default(omit) }}"
-  with_items: "{{  pulp_repository_rpm_repos }}"
+    repository: "{{ pulp_repository_rpm_repos[repository_index].name }}"
+    remote: "{{ pulp_repository_rpm_repos[repository_index].name }}-remote"
+    sync_policy: "{{ pulp_repository_rpm_repos[repository_index].sync_policy | default(omit) }}"
   when:
-    - item.url is defined
-    - item.state == "present"
+    - pulp_repository_rpm_repos[repository_index].url is defined
+    - pulp_repository_rpm_repos[repository_index].state == "present"
+  loop: "{{ pulp_repository_rpm_repos | map(attribute='name') }}"
   loop_control:
-    label: "{{ item.name }}"
+    index_var: repository_index"

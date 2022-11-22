@@ -5,11 +5,11 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ item.name }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_container_repos }}"
+    name: "{{ pulp_repository_container_repos[repository_index].name }}"
+    state: "{{ pulp_repository_container_repos[repository_index].state }}"
+    loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
   loop_control:
-    label: "{{ item.name }}"
+    index_var: repository_index
 
 - name: Setup container remotes
   pulp.squeezer.container_remote:
@@ -17,27 +17,29 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ item.name }}-remote"
-    ca_cert: "{{ item.ca_cert | default(omit) }}"
-    client_cert: "{{ item.client_cert | default(omit) }}"
-    client_key: "{{ item.client_key | default(omit) }}"
-    download_concurrency: "{{ item.download_concurrency | default(omit) }}"
-    exclude_tags: "{{ item.exclude_tags | default(omit) }}"
-    include_tags: "{{ item.include_tags | default(omit) }}"
-    policy: "{{ item.policy | default(omit) }}"
-    proxy_url: "{{ item.proxy_url | default(omit) }}"
-    proxy_username: "{{ item.proxy_username | default(omit) }}"
-    proxy_password: "{{ item.proxy_password | default(omit) }}"
-    remote_username: "{{ item.remote_username | default(omit) }}"
-    remote_password: "{{ item.remote_password | default(omit) }}"
-    tls_validation: "{{ item.tls_validation | default(omit) }}"
-    upstream_name: "{{ item.upstream_name | default(item.name) }}"
-    url: "{{ item.url | default(omit) }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_repository_container_repos }}"
-  when: item.state == "absent" or item.url is defined
+    name: "{{ pulp_repository_container_repos[repository_index].name }}-remote"
+    ca_cert: "{{ pulp_repository_container_repos[repository_index].ca_cert | default(omit) }}"
+    client_cert: "{{ pulp_repository_container_repos[repository_index].client_cert | default(omit) }}"
+    client_key: "{{ pulp_repository_container_repos[repository_index].client_key | default(omit) }}"
+    download_concurrency: "{{ pulp_repository_container_repos[repository_index].download_concurrency | default(omit) }}"
+    exclude_tags: "{{ pulp_repository_container_repos[repository_index].exclude_tags | default(omit) }}"
+    include_tags: "{{ pulp_repository_container_repos[repository_index].include_tags | default(omit) }}"
+    policy: "{{ pulp_repository_container_repos[repository_index].policy | default(omit) }}"
+    proxy_url: "{{ pulp_repository_container_repos[repository_index].proxy_url | default(omit) }}"
+    proxy_username: "{{ pulp_repository_container_repos[repository_index].proxy_username | default(omit) }}"
+    proxy_password: "{{ pulp_repository_container_repos[repository_index].proxy_password | default(omit) }}"
+    remote_username: "{{ pulp_repository_container_repos[repository_index].remote_username | default(omit) }}"
+    remote_password: "{{ pulp_repository_container_repos[repository_index].remote_password | default(omit) }}"
+    tls_validation: "{{ pulp_repository_container_repos[repository_index].tls_validation | default(omit) }}"
+    upstream_name: "{{ pulp_repository_container_repos[repository_index].upstream_name | default(pulp_repository_container_repos[repository_index].name) }}"
+    url: "{{ pulp_repository_container_repos[repository_index].url | default(omit) }}"
+    state: "{{ pulp_repository_container_repos[repository_index].state }}"
+  when: >
+    pulp_repository_container_repos[repository_index].state == "absent" or 
+    pulp_repository_container_repos[repository_index].url is defined
+  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
   loop_control:
-    label: "{{ item.name }}"
+    index_var: repository_index
 
 - name: Sync container remotes into repositories
   pulp.squeezer.container_sync:
@@ -45,11 +47,11 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    repository: "{{ item.name }}"
-    remote: "{{ item.name }}-remote"
-  with_items: "{{ pulp_repository_container_repos }}"
+    repository: "{{ pulp_repository_container_repos[repository_index].name }}"
+    remote: "{{ pulp_repository_container_repos[repository_index].name }}-remote"
   when:
-    - item.url is defined
-    - item.state == "present"
+    - pulp_repository_container_repos[repository_index].url is defined
+    - pulp_repository_container_repos[repository_index].state == "present"
+  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
   loop_control:
-    label: "{{ item.name }}"
+    index_var: repository_index
