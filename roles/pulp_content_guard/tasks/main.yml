@@ -5,13 +5,13 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ item.name }}"
-    description: "{{ item.description | default(omit) }}"
-    ca_certificate: "{{ item.ca_certificate | default(omit) }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_content_guard_x509_cert_guards }}"
+    name: "{{ pulp_content_guard_x509_cert_guards[cert_guard_index].name }}"
+    description: "{{ pulp_content_guard_x509_cert_guards[cert_guard_index].description | default(omit) }}"
+    ca_certificate: "{{ pulp_content_guard_x509_cert_guards[cert_guard_index].ca_certificate | default(omit) }}"
+    state: "{{ pulp_content_guard_x509_cert_guards[cert_guard_index].state }}"
+  loop: "{{ pulp_content_guard_x509_cert_guards | map(attribute='name') }}"
   loop_control:
-    label: "{{ item.name }}"
+    index_var: cert_guard_index
 
 - name: Ensure RBAC cert guards exist
   import_tasks: rbac/rbac.yml
