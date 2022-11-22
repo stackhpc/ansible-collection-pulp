@@ -36,7 +36,7 @@
     pulp_repository_rpm_repos[repository_index].url is defined
   loop: "{{ pulp_repository_rpm_repos | map(attribute='name') }}"
   loop_control:
-    index_var: repository_index"
+    index_var: repository_index
 
 - name: Sync RPM remotes into repositories
   pulp.squeezer.rpm_sync:
@@ -52,4 +52,4 @@
     - pulp_repository_rpm_repos[repository_index].state == "present"
   loop: "{{ pulp_repository_rpm_repos | map(attribute='name') }}"
   loop_control:
-    index_var: repository_index"
+    index_var: repository_index
