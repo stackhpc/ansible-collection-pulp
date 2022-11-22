@@ -37,15 +37,15 @@
       Cookie: "{{ result_login.cookies_string }}"
     body:
       csrfmiddlewaretoken: "{{ result_login.cookies.csrftoken }}"
-      username: "{{ item.username }}"
-      password1: "{{ item.password }}"
-      password2: "{{ item.password }}"
+      username: "{{ pulp_django_users[user_index].username }}"
+      password1: "{{ pulp_django_users[user_index].password }}"
+      password2: "{{ pulp_django_users[user_index].password }}"
     body_format: form-urlencoded
     follow_redirects: all
     validate_certs: "{{ pulp_validate_certs | bool }}"
-  loop: "{{ pulp_django_users }}"
+  loop: "{{ pulp_django_users | map(attribute='username') }}"
   loop_control:
-    label: "{{ item.username }}"
+    index_var: user_index
 
 - name: Add or remove user from group(s)
   include_tasks: user_groups/add_or_remove_users.yml
