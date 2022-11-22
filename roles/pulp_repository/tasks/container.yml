@@ -7,7 +7,7 @@
     validate_certs: "{{ pulp_validate_certs | bool }}"
     name: "{{ pulp_repository_container_repos[repository_index].name }}"
     state: "{{ pulp_repository_container_repos[repository_index].state }}"
-    loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
+  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
 
