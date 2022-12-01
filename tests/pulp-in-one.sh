@@ -8,7 +8,7 @@ set -o pipefail
 
 mkdir -p settings
 
-PULP_TAG=${PULP_TAG:3.18}
+PULP_TAG=${PULP_TAG:-"3.21"}
 
 cat << EOF > settings/settings.py
 CONTENT_ORIGIN='http://$(hostname):8080'
