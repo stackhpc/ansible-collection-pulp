@@ -1,27 +1,14 @@
 ---
 
-- name: Get all groups that user belongs to
-  uri:
-    url: "{{ pulp_user_url }}?username={{ user.username }}"
-    user: "{{ pulp_username }}"
-    password: "{{ pulp_password }}"
-    method: GET
-    status_code: 200
-    force_basic_auth: true
-  register: user_group_result
-
-- name: Set current_group_membership fact
-  set_fact:
-    current_group_membership: "{{ user_group_result | json_query('json.results[*].groups') | flatten | map(attribute='name') | list }}"
-
 - name: Remove user from groups not defined in pulp_users
   include_tasks: remove_user_from_groups.yml
-  loop: "{{ current_group_membership | difference(user.groups | default([], true)) }}"
+  loop: "{{ user.existing_groups | map(attribute='name') | difference(user.groups | default([], true)) }}"
   loop_control:
     loop_var: remove_group
+  when: user.existing_groups is defined
 
 - name: Add user to groups defined in pulp_users
   include_tasks: add_user_to_groups.yml
-  loop: "{{ user.groups | default([], true) | difference(current_group_membership) }}"
+  loop: "{{ user.groups | default([], true) | difference(user.existing_groups | default([]) | map(attribute='name') ) }}"
   loop_control:
     loop_var: add_group

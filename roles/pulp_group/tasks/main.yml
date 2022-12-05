@@ -1,24 +1,45 @@
 ---
 
-- name: Get group list
+- name: Get information for each group
   uri:
-    url: "{{ pulp_group_url }}"
+    url: "{{ pulp_group_url }}?name={{ item.name }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
-  register: groups_list_result
+  loop: "{{ pulp_groups }}"
+  register: groups_get_result
 
-- name: Set fact remove_groups
+- name: Reset groups facts
   set_fact:
-    remove_groups: "{{ (remove_groups | default([])) + [item.name] }}"
-  when: item.state is defined and item.state == 'absent'
-  with_items: "{{ pulp_groups }}"
+    remove_groups: []
+    create_groups: []
+
+- name: Set groups to remove fact
+  set_fact:
+    remove_groups: "{{ remove_groups + [group.json.results[0]] }}"
+  loop: "{{ groups_get_result.results }}"
+  loop_control:
+    loop_var: "group"
+    label: "{{ group.item.name }}"
+  when:
+   - group.json.count == 1
+   - group.item.state is defined
+   - group.item.state == "absent"
+
+- name: Set groups to create fact
+  set_fact:
+    create_groups: "{{ create_groups + [group.item] }}"
+  loop: "{{ groups_get_result.results }}"
+  loop_control:
+    loop_var: "group"
+    label: "{{ group.item.name }}"
+  when:
+   - group.json.count == 0
+   - group.item.state is not defined or group.item.state != "absent"
 
 - name: Create groups
-  vars:
-    groupnames: "{{ groups_list_result.json.results | map(attribute='name') | list }}"
   uri:
     url: "{{ pulp_group_url }}"
     user: "{{ pulp_username }}"
@@ -29,32 +50,21 @@
     body:
       name: "{{ item.name }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_groups }}"
-  register: result
-  when:
-    - item.name not in groupnames
-    - item.state is not defined or item.state != 'absent'
-  changed_when: result.status == 201
-
-- name: Initialise hrefs
-  set_fact:
-    hrefs: []
-
-- name: Set fact hrefs
-  set_fact:
-    hrefs: "{{ (hrefs | default([])) + [item.pulp_href] }}"
-  when: item.name in (remove_groups | default([]))
-  with_items: "{{ groups_list_result.json.results }}"
+  loop: "{{ create_groups }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: true
 
 - name: Remove groups
   uri:
-    url: "{{ pulp_url }}{{ item }}"
+    url: "{{ pulp_url }}{{ item.pulp_href }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
     method: DELETE
     status_code: 204
     body_format: form-urlencoded
-  loop: "{{ hrefs }}"
-  register: result
-  changed_when: result.status == 204
+  loop: "{{ remove_groups }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: true
