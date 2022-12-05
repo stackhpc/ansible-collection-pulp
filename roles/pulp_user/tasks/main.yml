@@ -1,24 +1,56 @@
 ---
-
-- name: Get user list
+- name: Get information for each user
   uri:
-    url: "{{ pulp_user_url }}"
+    url: "{{ pulp_user_url }}?username={{ item.username }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
-  register: users_list_result
+  loop: "{{ pulp_users }}"
+  register: users_get_result
 
-- name: Set fact remove_users
+- name: Reset users facts
   set_fact:
-    remove_users: "{{ (remove_users | default([])) + [item.username] }}"
-  when: item.state is defined and item.state == 'absent'
-  with_items: "{{ pulp_users }}"
+    remove_users: []
+    create_users: []
+    update_users: []
+
+- name: Set users to delete fact
+  set_fact:
+    remove_users: "{{ remove_users + [user.json.results[0]] }}"
+  loop: "{{ users_get_result.results }}"
+  loop_control:
+    loop_var: "user"
+    label: "{{ user.item.username }}"
+  when:
+    - user.json.count == 1
+    - user.item.state is defined
+    - user.item.state == "absent"
+
+- name: Set users to create fact
+  set_fact:
+    create_users: "{{ create_users + [user.item] }}"
+  loop: "{{ users_get_result.results }}"
+  loop_control:
+    loop_var: "user"
+    label: "{{ user.item.username }}"
+  when:
+   - user.json.count == 0
+   - user.item.state is not defined or user.item.state != "absent"
+
+- name: Set users to update fact
+  set_fact:
+    update_users: "{{ update_users + [user.json.results[0] | combine(user.item) | combine({'existing_groups': user.json.results[0]['groups']}) ] }}"
+  loop: "{{ users_get_result.results }}"
+  loop_control:
+    loop_var: "user"
+    label: "{{ user.item.username }}"
+  when:
+   - user.json.count == 1
+   - user.item.state is not defined or user.item.state != "absent"
 
 - name: Create users
-  vars:
-    usernames: "{{ users_list_result.json.results | map(attribute='username') | list }}"
   uri:
     url: "{{ pulp_user_url }}"
     user: "{{ pulp_username }}"
@@ -35,21 +67,14 @@
       is_staff: "{{ item.is_staff | default(None) }}"
       is_active: "{{ item.is_active | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_users }}"
+  loop: "{{ create_users }}"
   loop_control:
     label: "{{ item.username }}"
-  register: result
-  when:
-    - item.username not in usernames
-    - item.state is not defined or item.state != 'absent'
-  changed_when: result.status == 201
+  changed_when: true
 
 - name: Update existing users
-  vars:
-    usernames: "{{ users_list_result.json.results | map(attribute='username') | list }}"
-    url_query: "[?username=='{{ item.username }}'].pulp_href"
   uri:
-    url: "{{ pulp_url }}{{ users_list_result.json.results | json_query(url_query) | first }}"
+    url: "{{ pulp_url }}{{ item.pulp_href }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
@@ -63,46 +88,30 @@
       is_staff: "{{ item.is_staff | default(None) }}"
       is_active: "{{ item.is_active | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ pulp_users }}"
+  loop: "{{ update_users }}"
   loop_control:
     label: "{{ item.username }}"
   register: result
-  when:
-    - item.username in usernames
-    - item.state is not defined or item.state != 'absent'
-  changed_when:
-  # The pulp API currently does not report when a change is made, so we must
-  # manually check
-    - result.json not in users_list_result.json.results
-    - result.status == 200
+  changed_when: true
 
 - name: Add or remove user from group(s)
   include_tasks: user_groups/add_or_remove_users.yml
-  # Noop if pulp_users is defined but empty
-  loop: "{{ pulp_users }}"
-  when: item.state is not defined or item.state != 'absent'
+  # All users that aren't state: absent are in play here
+  loop: "{{ create_users + update_users }}"
   loop_control:
     loop_var: user
-
-- name: Initialise hrefs
-  set_fact:
-    hrefs: []
-
-- name: Set fact hrefs
-  set_fact:
-    hrefs: "{{ (hrefs | default([])) + [item.pulp_href] }}"
-  when: item.username in (remove_users | default([]))
-  with_items: "{{ users_list_result.json.results }}"
+    label: "{{ user.username }}"
 
 - name: Delete users
   uri:
-    url: "{{ pulp_url }}{{ item }}"
+    url: "{{ pulp_url }}{{ item.pulp_href }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
     method: DELETE
     status_code: 204
     body_format: form-urlencoded
-  loop: "{{ hrefs }}"
-  register: result
-  changed_when: result.status == 204
+  loop: "{{ remove_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  changed_when: true
