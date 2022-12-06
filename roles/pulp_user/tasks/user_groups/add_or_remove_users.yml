@@ -2,13 +2,13 @@
 
 - name: Remove user from groups not defined in pulp_users
   include_tasks: remove_user_from_groups.yml
-  loop: "{{ user.existing_groups | map(attribute='name') | difference(user.groups | default([], true)) }}"
+  loop: "{{ exist_users[user_index].existing_groups | map(attribute='name') | difference(exist_users[user_index].groups | default([], true)) }}"
   loop_control:
     loop_var: remove_group
-  when: user.existing_groups is defined
+  when: exist_users[user_index].existing_groups is defined
 
 - name: Add user to groups defined in pulp_users
   include_tasks: add_user_to_groups.yml
-  loop: "{{ user.groups | default([], true) | difference(user.existing_groups | default([]) | map(attribute='name') ) }}"
+  loop: "{{ exist_users[user_index].groups | default([], true) | difference(exist_users[user_index].existing_groups | default([]) | map(attribute='name')) }}"
   loop_control:
     loop_var: add_group
