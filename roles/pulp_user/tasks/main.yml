@@ -51,6 +51,21 @@
   when:
     - users_get_result.results[user_index].json.count == 1
     - pulp_users[user_index].state is not defined or pulp_users[user_index].state != "absent"
+    - >-
+      users_get_result.results[user_index].json.results[0].username != pulp_users[user_index].username or
+      (pulp_users[user_index].first_name is defined and
+      users_get_result.results[user_index].json.results[0].first_name != pulp_users[user_index].first_name) or
+      (pulp_users[user_index].last_name is defined and
+      users_get_result.results[user_index].json.results[0].last_name != pulp_users[user_index].last_name) or
+      (pulp_users[user_index].email is defined and
+      users_get_result.results[user_index].json.results[0].email != pulp_users[user_index].email) or
+      (pulp_users[user_index].is_active is defined and
+      users_get_result.results[user_index].json.results[0].is_active != pulp_users[user_index].is_active) or
+      (pulp_users[user_index].is_staff is defined and
+      users_get_result.results[user_index].json.results[0].is_staff != pulp_users[user_index].is_staff) or
+      (pulp_users[user_index].groups is defined and
+      users_get_result.results[user_index].json.results[0].groups | map(attribute='name') | list != pulp_users[user_index].groups) or
+      pulp_users[user_index].password is defined
 
 - name: Create users
   uri:
@@ -74,7 +89,6 @@
     index_var: user_index
   changed_when: true
 
-# Will always mark as changed even if user is the same as described
 - name: Update existing users
   uri:
     url: "{{ pulp_url }}{{ update_users[user_index].pulp_href }}"
