@@ -1,13 +1,15 @@
 ---
 - name: Get information for each user
   uri:
-    url: "{{ pulp_user_url }}?username={{ item.username }}"
+    url: "{{ pulp_user_url }}?username={{ pulp_users[user_index].username }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     method: GET
     status_code: 200
     force_basic_auth: true
-  loop: "{{ pulp_users }}"
+  loop: "{{ pulp_users | map(attribute='username') }}"
+  loop_control:
+    index_var: user_index
   register: users_get_result
 
 - name: Reset users facts
@@ -18,37 +20,52 @@
 
 - name: Set users to delete fact
   set_fact:
-    remove_users: "{{ remove_users + [user.json.results[0]] }}"
-  loop: "{{ users_get_result.results }}"
+    remove_users: "{{ remove_users + [users_get_result.results[user_index].json.results[0]] }}"
+  loop: "{{ users_get_result.results | map(attribute='item') }}"
   loop_control:
-    loop_var: "user"
-    label: "{{ user.item.username }}"
+    index_var: user_index
   when:
-    - user.json.count == 1
-    - user.item.state is defined
-    - user.item.state == "absent"
+    - users_get_result.results[user_index].json.count == 1
+    - pulp_users[user_index].state is defined
+    - pulp_users[user_index].state == "absent"
 
 - name: Set users to create fact
   set_fact:
-    create_users: "{{ create_users + [user.item] }}"
-  loop: "{{ users_get_result.results }}"
+    create_users: "{{ create_users + [pulp_users[user_index]] }}"
+  loop: "{{ users_get_result.results | map(attribute='item') }}"
   loop_control:
-    loop_var: "user"
-    label: "{{ user.item.username }}"
+    index_var: user_index
   when:
-   - user.json.count == 0
-   - user.item.state is not defined or user.item.state != "absent"
+    - users_get_result.results[user_index].json.count == 0
+    - pulp_users[user_index].state is not defined or pulp_users[user_index].state != "absent"
 
 - name: Set users to update fact
   set_fact:
-    update_users: "{{ update_users + [user.json.results[0] | combine(user.item) | combine({'existing_groups': user.json.results[0]['groups']}) ] }}"
-  loop: "{{ users_get_result.results }}"
+    update_users: >-
+      {{- update_users + [users_get_result.results[user_index].json.results[0]
+      | combine(pulp_users[user_index])
+      | combine({'existing_groups': users_get_result.results[user_index].json.results[0]['groups']})] -}}
+  loop: "{{ users_get_result.results | map(attribute='item') }}"
   loop_control:
-    loop_var: "user"
-    label: "{{ user.item.username }}"
+    index_var: user_index
   when:
-   - user.json.count == 1
-   - user.item.state is not defined or user.item.state != "absent"
+    - users_get_result.results[user_index].json.count == 1
+    - pulp_users[user_index].state is not defined or pulp_users[user_index].state != "absent"
+    - >-
+      users_get_result.results[user_index].json.results[0].username != pulp_users[user_index].username or
+      (pulp_users[user_index].first_name is defined and
+      users_get_result.results[user_index].json.results[0].first_name != pulp_users[user_index].first_name) or
+      (pulp_users[user_index].last_name is defined and
+      users_get_result.results[user_index].json.results[0].last_name != pulp_users[user_index].last_name) or
+      (pulp_users[user_index].email is defined and
+      users_get_result.results[user_index].json.results[0].email != pulp_users[user_index].email) or
+      (pulp_users[user_index].is_active is defined and
+      users_get_result.results[user_index].json.results[0].is_active != pulp_users[user_index].is_active) or
+      (pulp_users[user_index].is_staff is defined and
+      users_get_result.results[user_index].json.results[0].is_staff != pulp_users[user_index].is_staff) or
+      (pulp_users[user_index].groups is defined and
+      users_get_result.results[user_index].json.results[0].groups | map(attribute='name') | list != pulp_users[user_index].groups) or
+      pulp_users[user_index].password is defined
 
 - name: Create users
   uri:
@@ -59,59 +76,60 @@
     method: POST
     status_code: 201
     body:
-      username: "{{ item.username }}"
-      password: "{{ item.password | default(None) }}"
-      first_name: "{{ item.first_name | default(None) }}"
-      last_name: "{{ item.last_name | default(None) }}"
-      email: "{{ item.email | default(None) }}"
-      is_staff: "{{ item.is_staff | default(None) }}"
-      is_active: "{{ item.is_active | default(None) }}"
+      username: "{{ create_users[user_index].username }}"
+      password: "{{ create_users[user_index].password | default(None) }}"
+      first_name: "{{ create_users[user_index].first_name | default(None) }}"
+      last_name: "{{ create_users[user_index].last_name | default(None) }}"
+      email: "{{ create_users[user_index].email | default(None) }}"
+      is_staff: "{{ create_users[user_index].is_staff | default(None) }}"
+      is_active: "{{ create_users[user_index].is_active | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ create_users }}"
+  loop: "{{ create_users | map(attribute='username') }}"
   loop_control:
-    label: "{{ item.username }}"
+    index_var: user_index
   changed_when: true
 
 - name: Update existing users
   uri:
-    url: "{{ pulp_url }}{{ item.pulp_href }}"
+    url: "{{ pulp_url }}{{ update_users[user_index].pulp_href }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
     method: PATCH
     body:
-      username: "{{ item.username }}"
-      password: "{{ item.password | default(None) }}"
-      first_name: "{{ item.first_name | default(None) }}"
-      last_name: "{{ item.last_name | default(None) }}"
-      email: "{{ item.email | default(None) }}"
-      is_staff: "{{ item.is_staff | default(None) }}"
-      is_active: "{{ item.is_active | default(None) }}"
+      username: "{{ update_users[user_index].username }}"
+      password: "{{ update_users[user_index].password | default(None) }}"
+      first_name: "{{ update_users[user_index].first_name | default(None) }}"
+      last_name: "{{ update_users[user_index].last_name | default(None) }}"
+      email: "{{ update_users[user_index].email | default(None) }}"
+      is_staff: "{{ update_users[user_index].is_staff | default(None) }}"
+      is_active: "{{ update_users[user_index].is_active | default(None) }}"
     body_format: form-urlencoded
-  loop: "{{ update_users }}"
+  loop: "{{ update_users | map(attribute='username') }}"
   loop_control:
-    label: "{{ item.username }}"
+    index_var: user_index
   register: result
   changed_when: true
 
 - name: Add or remove user from group(s)
+  vars:
+    exist_users: "{{ create_users + update_users }}"
   include_tasks: user_groups/add_or_remove_users.yml
   # All users that aren't state: absent are in play here
-  loop: "{{ create_users + update_users }}"
+  loop: "{{ exist_users | map(attribute='username') }}"
   loop_control:
-    loop_var: user
-    label: "{{ user.username }}"
+    index_var: user_index
 
 - name: Delete users
   uri:
-    url: "{{ pulp_url }}{{ item.pulp_href }}"
+    url: "{{ pulp_url }}{{ remove_users[user_index].pulp_href }}"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     force_basic_auth: true
     method: DELETE
     status_code: 204
     body_format: form-urlencoded
-  loop: "{{ remove_users }}"
+  loop: "{{ remove_users | map(attribute='username') }}"
   loop_control:
-    label: "{{ item.username }}"
+    index_var: user_index
   changed_when: true

@@ -29,7 +29,7 @@
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     body:
-      username: "{{ user.username }}"
+      username: "{{ exist_users[user_index].username }}"
     body_format: json
     method: POST
     force_basic_auth: true

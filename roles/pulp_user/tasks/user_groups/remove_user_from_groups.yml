@@ -5,7 +5,7 @@
 - name: Remove user from group
   # DELETE {{ pulp_url }}/pulp/api/v3/groups/880/users/11/
   uri:
-    url: "{{ pulp_url }}{{ user_group.pulp_href }}users/{{ user.id }}/"
+    url: "{{ pulp_url }}{{ user_group.pulp_href }}users/{{ exist_users[user_index].id }}/"
     user: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     method: DELETE
@@ -14,7 +14,7 @@
     force_basic_auth: true
   # If we get here, we're always changing something
   changed_when: true
-  loop: "{{ user.existing_groups | selectattr('name', 'equalto', remove_group) }}"
+  loop: "{{ exist_users[user_index].existing_groups | selectattr('name', 'equalto', remove_group) }}"
   loop_control:
     loop_var: user_group
-    label: "{{ user.username }} {{ user_group.name }}"
+    label: "{{ exist_users[user_index].username }} {{ user_group.name }}"
