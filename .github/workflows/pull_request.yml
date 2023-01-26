@@ -20,9 +20,9 @@ jobs:
           - "2.12"
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so it's accessible to the job
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: |
@@ -54,9 +54,9 @@ jobs:
           - "3.21"
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so it's accessible to the job
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
 
       - name: Install dependencies
         run: |
