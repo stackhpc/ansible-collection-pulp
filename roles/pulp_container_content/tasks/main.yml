@@ -1,4 +1,14 @@
 ---
-- name: Include content.yml
-  include_tasks: content.yml
+- name: Add or remove content units
+  stackhpc.pulp.pulp_container_content:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    allow_missing: "{{ item.allow_missing | default(omit) }}"
+    src_repo: "{{ item.src_repo | default(omit) }}"
+    src_is_push: "{{ item.src_is_push | default(omit) }}"
+    repository: "{{ item.repository }}"
+    tags: "{{ item.tags }}"
+    state: "{{ item.state | default(omit) }}"
   loop: "{{ pulp_container_content }}"
