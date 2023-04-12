@@ -56,7 +56,7 @@
         that:
           - tags.json.results | map(attribute='name') | sort | list == ['manifest_a', 'manifest_b']
 
-    # Test idempotence
+    # Test idempotence and not waiting
     - include_role:
         name: pulp_container_content
       vars:
@@ -67,6 +67,7 @@
               - manifest_a
               - manifest_b
             state: present
+        pulp_container_content_wait: false
 
     - include_role:
         name: pulp_container_content
@@ -111,6 +112,7 @@
             tags:
               - manifest_b
             state: absent
+        pulp_container_content_wait: false
 
     - include_role:
         name: pulp_container_content

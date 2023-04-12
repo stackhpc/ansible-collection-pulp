@@ -137,13 +137,17 @@ class PulpContainerRepositoryContent(PulpContainerRepository):
                 add_or_remove_id, body=body, uploads=self.uploads, parameters=parameters
             )
             if response and "task" in response:
-                task = PulpTask(self.module, {"pulp_href": response["task"]}).wait_for()
-                # Adding or removing content results in creation of a new repository version
-                if task["created_resources"]:
-                    self.entity = {"pulp_href": task["created_resources"][0]}
-                    self.module.set_changed()
+                if self.module.params["wait"]:
+                    task = PulpTask(self.module, {"pulp_href": response["task"]}).wait_for()
+                    # Adding or removing content results in creation of a new repository version
+                    if task["created_resources"]:
+                        self.entity = {"pulp_href": task["created_resources"][0]}
+                        self.module.set_changed()
+                    else:
+                        self.entity = None
                 else:
-                    self.entity = None
+                    self._name_singular = "task"
+                    self.entity = {"pulp_href": response["task"]}
             else:
                 self.entity = response
         else:
@@ -178,6 +182,7 @@ def main():
             src_is_push={"type": "bool", "default": False},
             state={"default": "present"},
             tags={"type": "list", "item": "str", "required": True},
+            wait={"type": "bool", "default": True},
         ),
         required_if=[("state", "present", ["src_repo"])],
     ) as module:
