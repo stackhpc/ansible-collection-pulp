@@ -23,6 +23,8 @@ Role variables
   * `state`: Whether to add (`present`) or remove (`absent`) content.
   * `tags`: List of names of tags to add or remove.
 
+* `pulp_container_content_wait`: Whether to wait for content addition to complete in order. Default is `true`.
+
 Example playbook
 ----------------
 
