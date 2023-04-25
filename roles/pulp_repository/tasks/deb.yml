@@ -56,3 +56,7 @@
   loop: "{{ pulp_repository_deb_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
+  register: pulp_repository_deb_repos_sync
+  until: "pulp_repository_deb_repos_sync is not failed" 
+  retries: "{{ pulp_repository_deb_repos_sync_retries }}"
+  delay: 1

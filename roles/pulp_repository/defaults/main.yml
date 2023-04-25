@@ -8,3 +8,10 @@ pulp_repository_container_repos: []
 pulp_repository_deb_repos: []
 pulp_repository_python_repos: []
 pulp_repository_rpm_repos: []
+
+pulp_repository_sync_retries: 3
+
+pulp_repository_container_repos_sync_retries: "{{ pulp_repository_sync_retries }}"
+pulp_repository_deb_repos_sync_retries: "{{ pulp_repository_sync_retries }}"
+pulp_repository_python_repos_sync_retries: "{{ pulp_repository_sync_retries }}"
+pulp_repository_rpm_repos_sync_retries: "{{ pulp_repository_sync_retries }}"
