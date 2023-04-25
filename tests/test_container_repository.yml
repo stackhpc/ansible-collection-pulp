@@ -7,6 +7,7 @@
     pulp_username: admin
     pulp_password: password
     pulp_validate_certs: true
+    pulp_repository_container_repos_sync_retries: 2
   tasks:
     - include_role:
         name: pulp_repository
@@ -79,3 +80,36 @@
     - name: Verify remote deletion
       assert:
         that: container_remotes.remotes | length == 0
+
+    - block:
+      - include_role:
+          name: pulp_repository
+        vars:
+          pulp_repository_container_repos:
+            - name: test_container_repo_bad_url
+              upstream_name: pulp/test-fixture-1
+              url: "https://google.com/404"
+              policy: immediate
+              state: present
+
+      rescue:
+        - set_fact:
+            failed_task: "{{ ansible_failed_task }}"
+
+      always:
+        - name: Assert that syncing from a URL that returns 404 fails
+          assert:
+            that:
+              - failed_task.name == "Sync container remotes into repositories"
+
+        - name: Assert that syncing from a URL that returns 404 is retried the correct number of times
+          assert:
+            that:
+              - pulp_repository_container_repos_sync.results[0].attempts == pulp_repository_container_repos_sync_retries
+
+        - include_role:
+            name: pulp_repository
+          vars:
+            pulp_repository_deb_repos:
+            - name: test_container_repo_bad_url
+              state: absent
