@@ -3,7 +3,6 @@ skip_list:
   - var-naming[no-role-prefix]
   - yaml[line-length]
   - galaxy[no-changelog]
-  - galaxy[tags]
   - galaxy[version-incorrect]
   - meta-runtime[unsupported-version]
   - fqcn[action-core]
