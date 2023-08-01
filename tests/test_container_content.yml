@@ -49,12 +49,12 @@
         method: GET
         status_code: 200
         force_basic_auth: true
-      register: tags
+      register: container_tags
 
     - name: Assert that tags have been added
       assert:
         that:
-          - tags.json.results | map(attribute='name') | sort | list == ['manifest_a', 'manifest_b']
+          - container_tags.json.results | map(attribute='name') | sort | list == ['manifest_a', 'manifest_b']
 
     # Test idempotence and not waiting
     - include_role:
@@ -96,12 +96,12 @@
         method: GET
         status_code: 200
         force_basic_auth: true
-      register: tags
+      register: container_tags
 
     - name: Assert that manifest_b tag has been removed
       assert:
         that:
-          - tags.json.results | map(attribute='name') | list == ['manifest_a']
+          - container_tags.json.results | map(attribute='name') | list == ['manifest_a']
 
     # Test idempotence
     - include_role:
@@ -141,12 +141,12 @@
         method: GET
         status_code: 200
         force_basic_auth: true
-      register: tags
+      register: container_tags
 
     - name: Assert that all tags have been removed
       assert:
         that:
-          - tags.json.results == []
+          - container_tags.json.results == []
 
     - include_role:
         name: pulp_container_content
