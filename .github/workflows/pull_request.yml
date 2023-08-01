@@ -1,14 +1,13 @@
-
 name: Tests
 
 # Controls when the action will run.
-on:
+'on':
   pull_request:
   push:
     branches:
       - master
 env:
-  ANSIBLE_FORCE_COLOR: True
+  ANSIBLE_FORCE_COLOR: true
 
 jobs:
   lint:

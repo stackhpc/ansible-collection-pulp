@@ -24,9 +24,9 @@
     loop_var: "group"
     label: "{{ group.item.name }}"
   when:
-   - group.json.count == 1
-   - group.item.state is defined
-   - group.item.state == "absent"
+    - group.json.count == 1
+    - group.item.state is defined
+    - group.item.state == "absent"
 
 - name: Set groups to create fact
   set_fact:
@@ -36,8 +36,8 @@
     loop_var: "group"
     label: "{{ group.item.name }}"
   when:
-   - group.json.count == 0
-   - group.item.state is not defined or group.item.state != "absent"
+    - group.json.count == 0
+    - group.item.state is not defined or group.item.state != "absent"
 
 - name: Create groups
   uri:

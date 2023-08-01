@@ -19,7 +19,7 @@
     - name: Set Pulp version fact
       set_fact:
         pulp_version: "{{ pulp_status.json.versions | selectattr('component', 'equalto', 'core') | map(attribute='version') | first }}"
-    
+
     - name: Run Django user test on Pulp =< 3.18
       when: pulp_version is version('3.18', 'le', version_type='strict')
       block:
@@ -33,7 +33,7 @@
             status_code: 200
             force_basic_auth: true
           register: groups_result
-  
+
         - name: Create groups
           uri:
             url: "{{ pulp_url }}/pulp/api/v3/groups/"
@@ -49,7 +49,7 @@
             - test_group1
             - test_group2
           when: item not in groups_result.json.results | map(attribute='name') | list
-  
+
         - include_role:
             name: pulp_django_user
           vars:
@@ -58,7 +58,7 @@
                 password: correct horse battery staple
                 groups:
                   - test_group1
-  
+
         - name: Query user
           uri:
             url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user"
@@ -68,7 +68,7 @@
             status_code: 200
             force_basic_auth: true
           register: user_result
-  
+
         - name: Verify django user creation
           assert:
             that:
@@ -76,7 +76,7 @@
               - user_result.json.results[0].username == "test_user"
               - user_result.json.results[0].groups | length == 1
               - user_result.json.results[0].groups[0].name == "test_group1"
-  
+
         # Update group membership.
         - include_role:
             name: pulp_django_user
@@ -86,7 +86,7 @@
                 password: correct horse battery staple
                 groups:
                   - test_group2
-  
+
         - name: Query user
           uri:
             url: "{{ pulp_url }}/pulp/api/v3/users/?username=test_user"
@@ -96,7 +96,7 @@
             status_code: 200
             force_basic_auth: true
           register: user_result
-  
+
         - name: Verify django user group update
           assert:
             that:

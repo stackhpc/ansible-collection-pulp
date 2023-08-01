@@ -82,15 +82,15 @@
         that: deb_remotes.remotes | length == 0
 
     - block:
-      - include_role:
-          name: pulp_repository
-        vars:
-          pulp_repository_deb_repos:
-            - name: test_deb_repo_bad_url
-              url: "https://google.com/404"
-              distributions: "ragnarok"
-              policy: immediate
-              state: present
+        - include_role:
+            name: pulp_repository
+          vars:
+            pulp_repository_deb_repos:
+              - name: test_deb_repo_bad_url
+                url: "https://google.com/404"
+                distributions: "ragnarok"
+                policy: immediate
+                state: present
       rescue:
         - set_fact:
             failed_task: "{{ ansible_failed_task }}"
@@ -110,5 +110,5 @@
             name: pulp_repository
           vars:
             pulp_repository_deb_repos:
-            - name: test_deb_repo_bad_url
-              state: absent
+              - name: test_deb_repo_bad_url
+                state: absent
