@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 # Run a Pulp in one container, and reset the admin password to 'password'.
 # Use only for testing!
@@ -23,7 +23,7 @@ docker run \
   --name pulp \
   --volume "$(pwd)/settings":/etc/pulp \
   --publish 8080:80 \
-  pulp/pulp:$PULP_TAG
+  pulp/pulp:"$PULP_TAG"
 
 # Wait for it to come up.
 attempts=0

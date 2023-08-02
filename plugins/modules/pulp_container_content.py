@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -32,12 +34,25 @@ options:
       - Name of the repository to add or remove content
     type: str
     required: true
+  state:
+    description:
+      - State the entity should be in
+    type: str
+    default: present
+    choices:
+      - present
+      - absent
   tags:
     description:
       - List of tags to add or remove
     type: list
-    items: str
+    elements: str
     required: true
+  wait:
+    description:
+      - Whether to wait for completion of the operation
+    type: bool
+    default: true
 extends_documentation_fragment:
   - pulp.squeezer.pulp
   - pulp.squeezer.pulp.entity_state
@@ -79,7 +94,6 @@ RETURN = r"""
 from ansible_collections.pulp.squeezer.plugins.module_utils.pulp import (
     PAGE_LIMIT,
     PulpContainerRepository,
-    PulpEntity,
     PulpEntityAnsibleModule,
     PulpTask,
     SqueezerException,
@@ -123,8 +137,8 @@ class PulpContainerRepositoryContent(PulpContainerRepository):
             offset += PAGE_LIMIT
 
         if (self.module.params["state"] == "present" and
-            not self.module.params["allow_missing"] and
-            len(tags) != len(self.module.params["tags"])):
+                not self.module.params["allow_missing"] and
+                len(tags) != len(self.module.params["tags"])):
             missing = ", ".join(set(self.module.params["tags"]) - set(tags))
             raise SqueezerException(f"Some tags not found in source repository: {missing}")
         return [result["pulp_href"] for result in tags]
@@ -180,8 +194,8 @@ def main():
             repository={"required": True},
             src_repo={},
             src_is_push={"type": "bool", "default": False},
-            state={"default": "present"},
-            tags={"type": "list", "item": "str", "required": True},
+            state={"default": "present", "choices": ["present", "absent"]},
+            tags={"type": "list", "elements": "str", "required": True},
             wait={"type": "bool", "default": True},
         ),
         required_if=[("state", "present", ["src_repo"])],
