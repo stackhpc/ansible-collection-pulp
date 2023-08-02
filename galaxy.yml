@@ -1,5 +1,7 @@
 namespace: stackhpc
 name: pulp
+description: >
+  Roles and plugins Pulp repository server configuration
 version: "0.5.2"
 readme: "README.md"
 authors:
