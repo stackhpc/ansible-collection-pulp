@@ -151,7 +151,7 @@
       assert:
         that:
           - rbac_cg_list.json.results | json_query(query) | length == 0
-    
+
     - name: Cleanup
       include_role:
         name: pulp_content_guard

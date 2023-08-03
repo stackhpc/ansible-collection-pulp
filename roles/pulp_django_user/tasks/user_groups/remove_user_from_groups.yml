@@ -15,12 +15,12 @@
 # from pulp API
 - name: Fail when group cannot be unambiguosly returned from Pulp API
   fail:
-   msg: >
-     "Pulp API query: GET '{{ group_href_result.url }}' did not return
-     exactly one group. Groupname '{{ remove_group }}' was found
-     '{{ group_href_result.json.count }}' times.
-     Groupnames should be unique and exist before associating users
-     with them"
+    msg: >
+      "Pulp API query: GET '{{ group_href_result.url }}' did not return
+      exactly one group. Groupname '{{ remove_group }}' was found
+      '{{ group_href_result.json.count }}' times.
+      Groupnames should be unique and exist before associating users
+      with them"
   when: group_href_result.json.count != 1
 
 - name: Get user id from Pulp API

@@ -35,7 +35,7 @@
     url: "{{ pulp_repository_container_repos[repository_index].url | default(omit) }}"
     state: "{{ pulp_repository_container_repos[repository_index].state }}"
   when: >
-    pulp_repository_container_repos[repository_index].state == "absent" or 
+    pulp_repository_container_repos[repository_index].state == "absent" or
     pulp_repository_container_repos[repository_index].url is defined
   loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
   loop_control:
@@ -56,6 +56,6 @@
   loop_control:
     index_var: repository_index
   register: pulp_repository_container_repos_sync
-  until: "pulp_repository_container_repos_sync is not failed" 
+  until: "pulp_repository_container_repos_sync is not failed"
   retries: "{{ pulp_repository_container_repos_sync_retries }}"
   delay: 1

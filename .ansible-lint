@@ -1,0 +1,8 @@
+skip_list:
+  - name[missing]
+  - var-naming[no-role-prefix]
+  - yaml[line-length]
+  - galaxy[no-changelog]
+  - galaxy[version-incorrect]
+  - meta-runtime[unsupported-version]
+  - fqcn[action-core]

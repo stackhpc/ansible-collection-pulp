@@ -80,14 +80,14 @@
         that: rpm_remotes.remotes | length == 0
 
     - block:
-      - include_role:
-          name: pulp_repository
-        vars:
-          pulp_repository_rpm_repos:
-            - name: test_rpm_repo_bad_url
-              url: "https://google.com/404"
-              policy: immediate
-              state: present
+        - include_role:
+            name: pulp_repository
+          vars:
+            pulp_repository_rpm_repos:
+              - name: test_rpm_repo_bad_url
+                url: "https://google.com/404"
+                policy: immediate
+                state: present
       rescue:
         - set_fact:
             failed_task: "{{ ansible_failed_task }}"
@@ -107,5 +107,5 @@
             name: pulp_repository
           vars:
             pulp_repository_rpm_repos:
-            - name: test_rpm_repo_bad_url
-              state: absent
+              - name: test_rpm_repo_bad_url
+                state: absent

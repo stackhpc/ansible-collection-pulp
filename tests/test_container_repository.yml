@@ -82,15 +82,15 @@
         that: container_remotes.remotes | length == 0
 
     - block:
-      - include_role:
-          name: pulp_repository
-        vars:
-          pulp_repository_container_repos:
-            - name: test_container_repo_bad_url
-              upstream_name: pulp/test-fixture-1
-              url: "https://google.com/404"
-              policy: immediate
-              state: present
+        - include_role:
+            name: pulp_repository
+          vars:
+            pulp_repository_container_repos:
+              - name: test_container_repo_bad_url
+                upstream_name: pulp/test-fixture-1
+                url: "https://google.com/404"
+                policy: immediate
+                state: present
 
       rescue:
         - set_fact:
@@ -111,5 +111,5 @@
             name: pulp_repository
           vars:
             pulp_repository_deb_repos:
-            - name: test_container_repo_bad_url
-              state: absent
+              - name: test_container_repo_bad_url
+                state: absent
