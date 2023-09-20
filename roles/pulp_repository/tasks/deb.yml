@@ -10,9 +10,9 @@
   loop: "{{ pulp_repository_deb_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
-  register: pulp_repository_deb_repos_repositories
-  until: "pulp_repository_deb_repos_repositories is not failed"
-  retries: "{{ pulp_repository_deb_repos_repositories_retries }}"
+  register: pulp_repository_deb_repositories
+  until: "pulp_repository_deb_repositories is not failed"
+  retries: "{{ pulp_repository_deb_repositories_retries }}"
   delay: 1
 
 - name: Setup DEB remotes
@@ -44,9 +44,9 @@
   loop: "{{ pulp_repository_deb_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
-  register: pulp_repository_deb_repos_remotes
-  until: "pulp_repository_deb_repos_remotes is not failed"
-  retries: "{{ pulp_repository_deb_repos_remotes_retries }}"
+  register: pulp_repository_deb_remotes
+  until: "pulp_repository_deb_remotes is not failed"
+  retries: "{{ pulp_repository_deb_remotes_retries }}"
   delay: 1
 
 - name: Sync DEB remotes into repositories

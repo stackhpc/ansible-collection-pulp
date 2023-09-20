@@ -10,9 +10,9 @@
   loop: "{{ pulp_repository_rpm_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
-  register: pulp_repository_rpm_repos_repositories
-  until: "pulp_repository_rpm_repos_repositories is not failed"
-  retries: "{{ pulp_repository_rpm_repos_repositories_retries }}"
+  register: pulp_repository_rpm_repositories
+  until: "pulp_repository_rpm_repositories is not failed"
+  retries: "{{ pulp_repository_rpm_repositories_retries }}"
   delay: 1
 
 - name: Setup RPM remotes
@@ -41,9 +41,9 @@
   loop: "{{ pulp_repository_rpm_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
-  register: pulp_repository_rpm_repos_remotes
-  until: "pulp_repository_rpm_repos_remotes is not failed"
-  retries: "{{ pulp_repository_rpm_repos_remotes_retries }}"
+  register: pulp_repository_rpm_remotes
+  until: "pulp_repository_rpm_remotes is not failed"
+  retries: "{{ pulp_repository_rpm_remotes_retries }}"
   delay: 1
 
 - name: Sync RPM remotes into repositories
