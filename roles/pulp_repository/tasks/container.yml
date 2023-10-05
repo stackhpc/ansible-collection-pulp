@@ -10,6 +10,10 @@
   loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
+  register: pulp_repository_container_repositories
+  until: "pulp_repository_container_repositories is not failed"
+  retries: "{{ pulp_repository_container_repositories_retries }}"
+  delay: 1
 
 - name: Setup container remotes
   pulp.squeezer.container_remote:
@@ -40,6 +44,10 @@
   loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
+  register: pulp_repository_container_remotes
+  until: "pulp_repository_container_remotes is not failed"
+  retries: "{{ pulp_repository_container_remotes_retries }}"
+  delay: 1
 
 - name: Sync container remotes into repositories
   pulp.squeezer.container_sync:

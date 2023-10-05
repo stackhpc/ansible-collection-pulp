@@ -10,6 +10,10 @@
   loop: "{{ pulp_repository_python_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
+  register: pulp_repository_python_repositories
+  until: "pulp_repository_python_repositories is not failed"
+  retries: "{{ pulp_repository_python_repositories_retries }}"
+  delay: 1
 
 - name: Setup PyPI remotes
   pulp.squeezer.python_remote:
@@ -40,6 +44,10 @@
   loop: "{{ pulp_repository_python_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
+  register: pulp_repository_python_remotes
+  until: "pulp_repository_python_remotes is not failed"
+  retries: "{{ pulp_repository_python_remotes_retries }}"
+  delay: 1
 
 - name: Sync PyPI remotes into repositories
   pulp.squeezer.python_sync:
