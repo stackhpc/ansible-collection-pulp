@@ -42,6 +42,7 @@ options:
     choices:
       - present
       - absent
+      - read
   tags:
     description:
       - List of tags to add or remove
@@ -137,7 +138,7 @@ class PulpContainerRepositoryContent(PulpContainerRepository):
             offset += PAGE_LIMIT
 
         tag_names = [tag["name"] for tag in tags]
-        if (self.module.params["state"] == "present" and
+        if (self.module.params["state"] in ["present", "read"] and
                 not self.module.params["allow_missing"] and
                 len(tag_names) != len(self.module.params["tags"])):
             missing = ", ".join(set(self.module.params["tags"]) - set(tag_names))
@@ -176,13 +177,18 @@ class PulpContainerRepositoryContent(PulpContainerRepository):
     def remove(self):
         self.add_or_remove(self._remove_id, self.get_content_units(self))
 
+    def read(self):
+        self.get_content_units(self)
+
     def process(self):
         # Populate self.entity.
         self.find(failsafe=False)
         if self.module.params["state"] == "present":
-            response = self.add()
+            self.add()
         elif self.module.params["state"] == "absent":
-            response = self.remove()
+            self.remove()
+        elif self.module.params["state"] == "read":
+            self.read()
         else:
             raise SqueezerException("Unexpected state")
         self.module.set_result(self._name_singular, self.presentation(self.entity))
@@ -195,7 +201,7 @@ def main():
             repository={"required": True},
             src_repo={},
             src_is_push={"type": "bool", "default": False},
-            state={"default": "present", "choices": ["present", "absent"]},
+            state={"default": "present", "choices": ["present", "absent", "read"]},
             tags={"type": "list", "elements": "str", "required": True},
             wait={"type": "bool", "default": True},
         ),
