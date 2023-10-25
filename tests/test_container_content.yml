@@ -188,6 +188,29 @@
           assert:
             that:
               - failed_task.name == "Add or remove content units"
+        - set_fact:
+            failed_task:
+
+    # Repeat the above test with state=read
+    - block:
+        - include_role:
+            name: pulp_container_content
+          vars:
+            pulp_container_content:
+              - repository: test_container_repo
+                tags:
+                  - not-a-valid-tag
+                state: read
+      rescue:
+        - set_fact:
+            failed_task: "{{ ansible_failed_task }}"
+      always:
+        - name: Assert that querying a missing tag failed
+          assert:
+            that:
+              - failed_task.name == "Add or remove content units"
+        - set_fact:
+            failed_task:
 
     - include_role:
         name: pulp_repository
