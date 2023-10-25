@@ -136,10 +136,11 @@ class PulpContainerRepositoryContent(PulpContainerRepository):
             tags.extend(search_result["results"])
             offset += PAGE_LIMIT
 
+        tag_names = [tag["name"] for tag in tags]
         if (self.module.params["state"] == "present" and
                 not self.module.params["allow_missing"] and
-                len(tags) != len(self.module.params["tags"])):
-            missing = ", ".join(set(self.module.params["tags"]) - set(tags))
+                len(tag_names) != len(self.module.params["tags"])):
+            missing = ", ".join(set(self.module.params["tags"]) - set(tag_names))
             raise SqueezerException(f"Some tags not found in source repository: {missing}")
         return [result["pulp_href"] for result in tags]
 
