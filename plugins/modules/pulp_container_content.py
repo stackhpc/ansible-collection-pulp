@@ -20,6 +20,11 @@ options:
       - Whether to allow missing tags when state is present.
     type: bool
     default: false
+  is_push:
+    description:
+      - Whether repository is a container-push repository.
+    type: bool
+    default: false
   src_repo:
     description:
       - Name of the repository to copy content from when state is present.
@@ -181,6 +186,8 @@ class PulpContainerRepositoryContent(PulpContainerRepository):
         self.get_content_units(self)
 
     def process(self):
+        if self.module.params["state"] == "read" and self.module.params["is_push"]:
+            self._list_id = "repositories_container_container_push_list"
         # Populate self.entity.
         self.find(failsafe=False)
         if self.module.params["state"] == "present":
@@ -198,6 +205,7 @@ def main():
     with PulpEntityAnsibleModule(
         argument_spec=dict(
             allow_missing={"type": "bool", "default": False},
+            is_push={"type": "bool", "default": False},
             repository={"required": True},
             src_repo={},
             src_is_push={"type": "bool", "default": False},

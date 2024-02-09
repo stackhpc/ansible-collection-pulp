@@ -6,6 +6,7 @@
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
     allow_missing: "{{ item.allow_missing | default(omit) }}"
+    is_push: "{{ item.is_push | default(omit) }}"
     src_repo: "{{ item.src_repo | default(omit) }}"
     src_is_push: "{{ item.src_is_push | default(omit) }}"
     repository: "{{ item.repository }}"
