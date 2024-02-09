@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ansible==5.* jmespath
+          pip install ansible==5.* jmespath pulp-glue==0.21.*
           ansible-galaxy collection install git+file://$(pwd)
 
       - name: Run Pulp in one
