@@ -97,7 +97,7 @@ RETURN = r"""
 """
 
 
-from ansible_collections.pulp.squeezer.plugins.module_utils.pulp import (
+from pulp_glue import (
     PAGE_LIMIT,
     PulpContainerRepository,
     PulpEntityAnsibleModule,
