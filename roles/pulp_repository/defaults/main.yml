@@ -26,3 +26,5 @@ pulp_repository_python_repositories_retries: "{{ pulp_repository_create_reposito
 pulp_repository_rpm_repos_sync_retries: "{{ pulp_repository_sync_retries }}"
 pulp_repository_rpm_remotes_retries: "{{ pulp_repository_remote_retries }}"
 pulp_repository_rpm_repositories_retries: "{{ pulp_repository_create_repository_retries }}"
+
+pulp_repository_fast_update: false

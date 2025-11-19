@@ -1,47 +1,76 @@
 ---
-- name: Setup container repositories
+- name: List pulp container repositories
   pulp.squeezer.container_repository:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ pulp_repository_container_repos[repository_index].name }}"
-    state: "{{ pulp_repository_container_repos[repository_index].state }}"
-  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
+  register: pulp_repository_container_existing_repos
+  when: pulp_repository_fast_update | bool
+
+- name: List pulp container remotes
+  pulp.squeezer.container_remote:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+  register: pulp_repository_container_existing_remotes
+  when: pulp_repository_fast_update | bool
+
+- name: Setup container repositories
+  vars:
+    pulp_existing_repo_names: "{{ pulp_repository_container_existing_repos.repositories | map(attribute='name') | list }}"
+    fast_loop_list: "{{ pulp_repository_container_repos | rejectattr('name', 'in', pulp_existing_repo_names) }}"
+    loop_list: "{{ fast_loop_list if pulp_repository_fast_update else pulp_repository_container_repos }}"
+  pulp.squeezer.container_repository:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    name: "{{ loop_list[repository_index].name }}"
+    state: "{{ loop_list[repository_index].state }}"
+  loop: "{{ loop_list | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
+  when: >
+    ((loop_list[repository_index].name in pulp_existing_repo_names) and (loop_list[repository_index].state == 'absent')) or
+    ((loop_list[repository_index].name not in pulp_existing_repo_names) and (loop_list[repository_index].state == 'present'))
   register: pulp_repository_container_repositories
   until: "pulp_repository_container_repositories is not failed"
   retries: "{{ pulp_repository_container_repositories_retries }}"
   delay: 1
 
 - name: Setup container remotes
+  vars:
+    pulp_existing_remote_names: "{{ pulp_repository_container_existing_remotes.remotes | map(attribute='name') | map('regex_replace', '-remote$', '') | list }}"
+    fast_loop_list: "{{ pulp_repository_container_repos | rejectattr('name', 'in', pulp_existing_remote_names) }}"
+    loop_list: "{{ fast_loop_list if pulp_repository_fast_update | bool else pulp_repository_container_repos }}"
   pulp.squeezer.container_remote:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ pulp_repository_container_repos[repository_index].name }}-remote"
-    ca_cert: "{{ pulp_repository_container_repos[repository_index].ca_cert | default(omit) }}"
-    client_cert: "{{ pulp_repository_container_repos[repository_index].client_cert | default(omit) }}"
-    client_key: "{{ pulp_repository_container_repos[repository_index].client_key | default(omit) }}"
-    download_concurrency: "{{ pulp_repository_container_repos[repository_index].download_concurrency | default(omit) }}"
-    exclude_tags: "{{ pulp_repository_container_repos[repository_index].exclude_tags | default(omit) }}"
-    include_tags: "{{ pulp_repository_container_repos[repository_index].include_tags | default(omit) }}"
-    policy: "{{ pulp_repository_container_repos[repository_index].policy | default(omit) }}"
-    proxy_url: "{{ pulp_repository_container_repos[repository_index].proxy_url | default(omit) }}"
-    proxy_username: "{{ pulp_repository_container_repos[repository_index].proxy_username | default(omit) }}"
-    proxy_password: "{{ pulp_repository_container_repos[repository_index].proxy_password | default(omit) }}"
-    remote_username: "{{ pulp_repository_container_repos[repository_index].remote_username | default(omit) }}"
-    remote_password: "{{ pulp_repository_container_repos[repository_index].remote_password | default(omit) }}"
-    tls_validation: "{{ pulp_repository_container_repos[repository_index].tls_validation | default(omit) }}"
-    upstream_name: "{{ pulp_repository_container_repos[repository_index].upstream_name | default(pulp_repository_container_repos[repository_index].name) }}"
-    url: "{{ pulp_repository_container_repos[repository_index].url | default(omit) }}"
-    state: "{{ pulp_repository_container_repos[repository_index].state }}"
+    name: "{{ loop_list[repository_index].name }}-remote"
+    ca_cert: "{{ loop_list[repository_index].ca_cert | default(omit) }}"
+    client_cert: "{{ loop_list[repository_index].client_cert | default(omit) }}"
+    client_key: "{{ loop_list[repository_index].client_key | default(omit) }}"
+    download_concurrency: "{{ loop_list[repository_index].download_concurrency | default(omit) }}"
+    exclude_tags: "{{ loop_list[repository_index].exclude_tags | default(omit) }}"
+    include_tags: "{{ loop_list[repository_index].include_tags | default(omit) }}"
+    policy: "{{ loop_list[repository_index].policy | default(omit) }}"
+    proxy_url: "{{ loop_list[repository_index].proxy_url | default(omit) }}"
+    proxy_username: "{{ loop_list[repository_index].proxy_username | default(omit) }}"
+    proxy_password: "{{ loop_list[repository_index].proxy_password | default(omit) }}"
+    remote_username: "{{ loop_list[repository_index].remote_username | default(omit) }}"
+    remote_password: "{{ loop_list[repository_index].remote_password | default(omit) }}"
+    tls_validation: "{{ loop_list[repository_index].tls_validation | default(omit) }}"
+    upstream_name: "{{ loop_list[repository_index].upstream_name | default(loop_list[repository_index].name) }}"
+    url: "{{ loop_list[repository_index].url | default(omit) }}"
+    state: "{{ loop_list[repository_index].state }}"
   when: >
-    pulp_repository_container_repos[repository_index].state == "absent" or
-    pulp_repository_container_repos[repository_index].url is defined
-  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
+    loop_list[repository_index].state == "absent" or
+    loop_list[repository_index].url is defined
+  loop: "{{ loop_list | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
   register: pulp_repository_container_remotes
