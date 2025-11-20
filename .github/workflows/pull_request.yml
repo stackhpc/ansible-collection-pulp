@@ -16,8 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         pulp:
-          - "3.21"
           - "3.45"
+          - "3.81"
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so it's accessible to the job
       - uses: actions/checkout@v3
