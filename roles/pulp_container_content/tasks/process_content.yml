@@ -1,0 +1,127 @@
+---
+- name: Get destination repository href
+  pulp.squeezer.api_call:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    method: GET
+    url: "/pulp/api/v3/repositories/container/container/?name={{ content_item.repository }}"
+  register: dest_repo_result
+
+- name: Fail if destination repository not found
+  fail:
+    msg: "Destination repository '{{ content_item.repository }}' not found."
+  when: dest_repo_result.json.count == 0
+
+- name: Set destination repo href
+  set_fact:
+    dest_repo_href: "{{ dest_repo_result.json.results[0].pulp_href }}"
+
+- name: Get source repository info (if needed)
+  pulp.squeezer.api_call:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    method: GET
+    url: "/pulp/api/v3/repositories/container/{{ 'push' if content_item.src_is_push | default(false) else 'container' }}/?name={{ content_item.src_repo }}"
+  register: src_repo_result
+  when: 
+    - content_item.state | default('present') in ['present', 'read']
+    - content_item.src_repo is defined
+
+- name: Fail if source repository not found
+  fail:
+    msg: "Source repository '{{ content_item.src_repo }}' not found."
+  when: 
+    - content_item.state | default('present') in ['present', 'read']
+    - content_item.src_repo is defined
+    - src_repo_result.json.count == 0
+
+- name: Resolve tags from source repository
+  block:
+    - name: List tags from source repository
+      pulp.squeezer.api_call:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs | bool }}"
+        method: GET
+        url: "/pulp/api/v3/content/container/tags/"
+        parameters:
+          name__in: "{{ content_item.tags | join(',') }}"
+          repository_version: "{{ src_repo_result.json.results[0].latest_version_href }}"
+      register: tags_result
+
+    - name: Check for missing tags
+      vars:
+        found_tags: "{{ tags_result.json.results | map(attribute='name') | list }}"
+        missing_tags: "{{ content_item.tags | difference(found_tags) }}"
+      fail:
+        msg: "Some tags not found in source repository: {{ missing_tags | join(', ') }}"
+      when: 
+        - not content_item.allow_missing | default(false)
+        - missing_tags | length > 0
+
+    - name: Set content units to process (from source)
+      set_fact:
+        content_units: "{{ tags_result.json.results | map(attribute='pulp_href') | list }}"
+  when: 
+    - content_item.state | default('present') in ['present', 'read']
+    - content_item.src_repo is defined
+
+- name: Resolve tags to remove (from destination)
+  block:
+    - name: List tags to remove from destination repository
+      pulp.squeezer.api_call:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs | bool }}"
+        method: GET
+        url: "/pulp/api/v3/content/container/tags/"
+        parameters:
+          name__in: "{{ content_item.tags | join(',') }}"
+          repository_version: "{{ dest_repo_result.json.results[0].latest_version_href }}"
+      register: remove_tags_result
+    
+    - name: Set content units to process (for removal)
+      set_fact:
+        content_units: "{{ remove_tags_result.json.results | map(attribute='pulp_href') | list }}"
+  when: 
+    - content_item.state | default('present') == 'absent'
+
+- name: Modify repository content
+  pulp.squeezer.api_call:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    method: POST
+    url: "{{ dest_repo_href }}modify/"
+    body: "{{ modify_body }}"
+  vars:
+    modify_body: >-
+      {% if content_item.state | default('present') == 'present' %}
+      { "add_content_units": {{ content_units }} }
+      {% else %}
+      { "remove_content_units": {{ content_units }} }
+      {% endif %}
+  register: modify_result
+  when: 
+    - content_item.state | default('present') != 'read'
+    - content_units | length > 0
+  changed_when: true
+
+- name: Wait for task completion
+  pulp.squeezer.task:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    pulp_href: "{{ modify_result.json.task }}"
+    state: completed
+  when: 
+    - modify_result is changed
+    - pulp_container_content_wait | bool
