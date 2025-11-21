@@ -182,14 +182,14 @@
                 state: present
       rescue:
         - set_fact:
-            failed_task: "{{ ansible_failed_task }}"
+            failed_msg: "{{ ansible_failed_result.msg }}"
       always:
         - name: Assert that adding a missing tag failed
           assert:
             that:
-              - failed_task.name == "Add or remove content units"
+              - failed_msg is search("Some tags not found in source repository")
         - set_fact:
-            failed_task:
+            failed_msg:
 
     # Repeat the above test with state=read
     - block:
@@ -203,14 +203,14 @@
                 state: read
       rescue:
         - set_fact:
-            failed_task: "{{ ansible_failed_task }}"
+            failed_msg: "{{ ansible_failed_result.msg }}"
       always:
         - name: Assert that querying a missing tag failed
           assert:
             that:
-              - failed_task.name == "Add or remove content units"
+              - failed_msg is search("Some tags not found in source repository")
         - set_fact:
-            failed_task:
+            failed_msg:
 
     - include_role:
         name: pulp_repository
