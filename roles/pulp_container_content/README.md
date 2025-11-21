@@ -18,6 +18,7 @@ Role variables
     when `state` is `present`.
   * `repository`: Name of the repository to copy to when `state is `present`
     or the repository to remove from when `state` is `absent`.
+  * `is_push`: Whether destination repo is a push repository. Default is `false`.
   * `src_repo`: Name of the repository to copy from when `state` is `present`.
   * `src_is_push`: Whether `src_repo` is a push repository. Default is `false`.
   * `state`: Whether to add (`present`) or remove (`absent`) content.

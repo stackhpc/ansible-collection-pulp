@@ -1,20 +1,13 @@
 ---
+- name: Initialise active tasks list
+  set_fact:
+    pulp_container_active_tasks: []
+
 - name: Add or remove content units
-  stackhpc.pulp.pulp_container_content:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_username }}"
-    password: "{{ pulp_password }}"
-    validate_certs: "{{ pulp_validate_certs | bool }}"
-    allow_missing: "{{ item.allow_missing | default(omit) }}"
-    is_push: "{{ item.is_push | default(omit) }}"
-    src_repo: "{{ item.src_repo | default(omit) }}"
-    src_is_push: "{{ item.src_is_push | default(omit) }}"
-    repository: "{{ item.repository }}"
-    tags: "{{ item.tags }}"
-    state: "{{ item.state | default(omit) }}"
-    wait: "{{ pulp_container_content_wait | bool }}"
+  include_tasks: process_content.yml
   loop: "{{ pulp_container_content }}"
-  register: pulp_container_content_result
+  loop_control:
+    loop_var: content_item
 
 - name: Wait for tasks to complete
   pulp.squeezer.task:
@@ -22,15 +15,7 @@
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    pulp_href: "{{ content_result.task.pulp_href }}"
-    state: "completed"
-  loop: "{{ pulp_container_content }}"
-  when:
-    - not pulp_container_content_wait | bool
-    - "'task' in content_result"
-  changed_when: pulp_container_content_wait_result.task.created_resources | default([]) | length > 0
-  register: pulp_container_content_wait_result
-  loop_control:
-    index_var: result_index
-  vars:
-    content_result: "{{ pulp_container_content_result.results[result_index] }}"
+    pulp_href: "{{ item }}"
+    state: completed
+  loop: "{{ pulp_container_active_tasks }}"
+  when: pulp_container_content_wait | bool
