@@ -7,12 +7,15 @@ Note: Pulp server installation is out of this collection's scope - for this purp
 
 ## Tested with Ansible
 
-Tested with the current Ansible 2.9-2.10 releases.
+Tested with the current Ansible 11 release.
 
 ## Included content
 
 pulp_contentguard role
 pulp_repository role
+pulp_distribution role
+pulp_django_user role
+pulp_group role
 
 ## Using this collection
 
