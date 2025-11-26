@@ -33,7 +33,7 @@
 
     - name: Query repository
       uri:
-        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name={{ 'test_container_repo2' | urlencode | regex_replace('/','%2F') }}"
+        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name={{ 'test_container_repo2' | urlencode | regex_replace('/', '%2F') }}"
         user: "{{ pulp_username }}"
         password: "{{ pulp_password }}"
         method: GET
@@ -43,7 +43,7 @@
 
     - name: Query tags
       uri:
-        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ repo.json.results[0].latest_version_href | urlencode | regex_replace('/','%2F') }}"
+        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ repo.json.results[0].latest_version_href | urlencode | regex_replace('/', '%2F') }}"
         user: "{{ pulp_username }}"
         password: "{{ pulp_password }}"
         method: GET
@@ -80,7 +80,7 @@
 
     - name: Query repository
       uri:
-        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name={{ 'test_container_repo2' | urlencode | regex_replace('/','%2F') }}"
+        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name={{ 'test_container_repo2' | urlencode | regex_replace('/', '%2F') }}"
         user: "{{ pulp_username }}"
         password: "{{ pulp_password }}"
         method: GET
@@ -90,7 +90,7 @@
 
     - name: Query tags
       uri:
-        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ repo.json.results[0].latest_version_href | urlencode | regex_replace('/','%2F') }}"
+        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ repo.json.results[0].latest_version_href | urlencode | regex_replace('/', '%2F') }}"
         user: "{{ pulp_username }}"
         password: "{{ pulp_password }}"
         method: GET
@@ -125,7 +125,7 @@
 
     - name: Query repository
       uri:
-        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name={{ 'test_container_repo2' | urlencode | regex_replace('/','%2F') }}"
+        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name={{ 'test_container_repo2' | urlencode | regex_replace('/', '%2F') }}"
         user: "{{ pulp_username }}"
         password: "{{ pulp_password }}"
         method: GET
@@ -135,7 +135,7 @@
 
     - name: Query tags
       uri:
-        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ repo.json.results[0].latest_version_href | urlencode | regex_replace('/','%2F') }}"
+        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ repo.json.results[0].latest_version_href | urlencode | regex_replace('/', '%2F') }}"
         user: "{{ pulp_username }}"
         password: "{{ pulp_password }}"
         method: GET

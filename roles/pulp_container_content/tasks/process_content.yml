@@ -53,6 +53,7 @@
     - content_item.state | default('present') != 'present' or content_item.src_repo is defined
 
 - name: Resolve tags
+  when: ref_repo_version is defined
   block:
     - name: List tags from reference repository
       pulp.squeezer.api_call:
@@ -80,7 +81,6 @@
     - name: Set content units to process
       set_fact:
         content_units: "{{ tags_result.response.results | map(attribute='pulp_href') | list }}"
-  when: ref_repo_version is defined
 
 - name: Add content to repository
   pulp.squeezer.api_call:

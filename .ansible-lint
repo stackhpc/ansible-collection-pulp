@@ -6,3 +6,7 @@ skip_list:
   - galaxy[version-incorrect]
   - meta-runtime[unsupported-version]
   - fqcn[action-core]
+
+# Ensure dependent collections are not linted
+exclude_paths:
+  - .ansible/
