@@ -10,7 +10,7 @@ authors:
   - "Mark Goddard"
   - "Alex Welsh"
 dependencies:
-  "pulp.squeezer": ">=0.20.0"
+  "pulp.squeezer": "0.2.3"
 license:
   - "Apache-2.0"
 tags:
