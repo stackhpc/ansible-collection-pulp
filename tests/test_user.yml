@@ -22,8 +22,8 @@
     - name: Exit if version < 3.17
       meta: end_play
       vars:
-        query: "[?component=='core'].version"
-      when: status_result.json.versions | json_query(query) | first is version('3.17', '<')
+        query_string: "[?component=='core'].version"
+      when: status_result.json.versions | json_query(query_string) | first is version('3.17', '<')
 
     - name: Query groups
       uri:

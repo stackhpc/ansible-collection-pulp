@@ -23,8 +23,8 @@
     - name: Exit if version < 3.17
       meta: end_play
       vars:
-        query: "[?component=='core'].version"
-      when: status_result.json.versions | json_query(query) | first is version('3.17', '<')
+        query_string: "[?component=='core'].version"
+      when: status_result.json.versions | json_query(query_string) | first is version('3.17', '<')
 
     - name: Query groups
       uri:
@@ -84,31 +84,31 @@
 
     - name: Evaluate results for test-rbac_cg-1
       vars:
-        query: "[?name=='test-rbac_cg-1']"
+        query_string: "[?name=='test-rbac_cg-1']"
       assert:
         that:
-          - rbac_cg_list.json.results | json_query(query) | length == 1
-          - (rbac_cg_list.json.results | json_query(query) | first).name == 'test-rbac_cg-1'
-          - (rbac_cg_list.json.results | json_query(query) | first).groups | length == 2
-          - (rbac_cg_list.json.results | json_query(query) | first).groups[0].name in ['test_group1', 'test_group2']
-          - (rbac_cg_list.json.results | json_query(query) | first).groups[1].name in ['test_group1', 'test_group2']
+          - rbac_cg_list.json.results | json_query(query_string) | length == 1
+          - (rbac_cg_list.json.results | json_query(query_string) | first).name == 'test-rbac_cg-1'
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups | length == 2
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups[0].name in ['test_group1', 'test_group2']
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups[1].name in ['test_group1', 'test_group2']
           - >
-              (rbac_cg_list.json.results | json_query(query) | first).groups[0].name !=
-              (rbac_cg_list.json.results | json_query(query) | first).groups[1].name
+              (rbac_cg_list.json.results | json_query(query_string) | first).groups[0].name !=
+              (rbac_cg_list.json.results | json_query(query_string) | first).groups[1].name
 
     - name: Evaluate results for test-rbac_cg-2
       vars:
-        query: "[?name=='test-rbac_cg-2']"
+        query_string: "[?name=='test-rbac_cg-2']"
       assert:
         that:
-          - rbac_cg_list.json.results | json_query(query) | length == 1
-          - (rbac_cg_list.json.results | json_query(query) | first).name == 'test-rbac_cg-2'
-          - (rbac_cg_list.json.results | json_query(query) | first).groups | length == 2
-          - (rbac_cg_list.json.results | json_query(query) | first).groups[0].name in ['test_group1', 'test_group2']
-          - (rbac_cg_list.json.results | json_query(query) | first).groups[1].name in ['test_group1', 'test_group2']
+          - rbac_cg_list.json.results | json_query(query_string) | length == 1
+          - (rbac_cg_list.json.results | json_query(query_string) | first).name == 'test-rbac_cg-2'
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups | length == 2
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups[0].name in ['test_group1', 'test_group2']
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups[1].name in ['test_group1', 'test_group2']
           - >
-              (rbac_cg_list.json.results | json_query(query) | first).groups[0].name !=
-              (rbac_cg_list.json.results | json_query(query) | first).groups[1].name
+              (rbac_cg_list.json.results | json_query(query_string) | first).groups[0].name !=
+              (rbac_cg_list.json.results | json_query(query_string) | first).groups[1].name
 
     # update content guards
     - include_role:
@@ -136,21 +136,21 @@
 
     - name: Evaluate results for test-rbac_cg-1
       vars:
-        query: "[?name=='test-rbac_cg-1']"
+        query_string: "[?name=='test-rbac_cg-1']"
       assert:
         that:
-          - rbac_cg_list.json.results | json_query(query) | length == 1
-          - (rbac_cg_list.json.results | json_query(query) | first).name == 'test-rbac_cg-1'
-          - (rbac_cg_list.json.results | json_query(query) | first).groups | length == 1
-          - (rbac_cg_list.json.results | json_query(query) | first).groups[0].name == 'test_group1'
+          - rbac_cg_list.json.results | json_query(query_string) | length == 1
+          - (rbac_cg_list.json.results | json_query(query_string) | first).name == 'test-rbac_cg-1'
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups | length == 1
+          - (rbac_cg_list.json.results | json_query(query_string) | first).groups[0].name == 'test_group1'
 
 
     - name: Evaluate results for test-rbac_cg-2
       vars:
-        query: "[?name=='test-rbac_cg-2']"
+        query_string: "[?name=='test-rbac_cg-2']"
       assert:
         that:
-          - rbac_cg_list.json.results | json_query(query) | length == 0
+          - rbac_cg_list.json.results | json_query(query_string) | length == 0
 
     - name: Cleanup
       include_role:
