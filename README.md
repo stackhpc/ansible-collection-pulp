@@ -7,7 +7,7 @@ Note: Pulp server installation is out of this collection's scope - for this purp
 
 ## Tested with Ansible
 
-Tested with the current Ansible 13 releases.
+Tested with the current Ansible 11 release.
 
 ## Included content
 
