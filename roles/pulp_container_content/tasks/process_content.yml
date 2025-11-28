@@ -118,15 +118,11 @@
     - content_units | length > 0
   changed_when: true
 
-- name: Wait for task completion
-  pulp.squeezer.task:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_username }}"
-    password: "{{ pulp_password }}"
-    validate_certs: "{{ pulp_validate_certs | bool }}"
-    pulp_href: "{{ item.response.pulp_href }}"
-    state: completed
+- name: Register active tasks
+  set_fact:
+    pulp_container_active_tasks: "{{ pulp_container_active_tasks + [item.response.pulp_href] }}"
   loop: "{{ [add_result, remove_result] }}"
   when:
+    - item is defined
     - item.changed | default(false)
-    - pulp_container_content_wait | bool
+    - item.response.pulp_href is defined

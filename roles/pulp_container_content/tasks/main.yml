@@ -1,6 +1,21 @@
 ---
+- name: Initialize active tasks list
+  set_fact:
+    pulp_container_active_tasks: []
+
 - name: Add or remove content units
   include_tasks: process_content.yml
   loop: "{{ pulp_container_content }}"
   loop_control:
     loop_var: content_item
+
+- name: Wait for tasks to complete
+  pulp.squeezer.task:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    pulp_href: "{{ item }}"
+    state: completed
+  loop: "{{ pulp_container_active_tasks }}"
+  when: pulp_container_content_wait | bool
