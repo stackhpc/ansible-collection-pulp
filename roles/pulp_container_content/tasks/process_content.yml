@@ -31,14 +31,14 @@
     parameters:
       name: "{{ content_item.src_repo }}"
   register: src_repo_result
-  when:
+  when: 
     - content_item.state | default('present') == 'present'
     - content_item.src_repo is defined
 
 - name: Fail if source repository not found
   fail:
     msg: "Source repository '{{ content_item.src_repo }}' not found."
-  when:
+  when: 
     - content_item.state | default('present') == 'present'
     - content_item.src_repo is defined
     - src_repo_result.response.count == 0
@@ -75,7 +75,7 @@
         missing_tags: "{{ content_item.tags | difference(found_tags) }}"
       fail:
         msg: "Some tags not found in source repository: {{ missing_tags | join(', ') }}"
-      when:
+      when: 
         - content_item.state | default('present') in ['present', 'read']
         - not content_item.allow_missing | default(false)
         - missing_tags | length > 0
@@ -96,7 +96,7 @@
     body:
       content_units: "{{ content_units }}"
   register: add_result
-  when:
+  when: 
     - content_item.state | default('present') == 'present'
     - content_units | length > 0
   changed_when: true
@@ -113,20 +113,17 @@
     body:
       content_units: "{{ content_units }}"
   register: remove_result
-  when:
+  when: 
     - content_item.state | default('present') == 'absent'
     - content_units | length > 0
   changed_when: true
 
-- name: Wait for task completion
-  pulp.squeezer.task:
-    pulp_url: "{{ pulp_url }}"
-    username: "{{ pulp_username }}"
-    password: "{{ pulp_password }}"
-    validate_certs: "{{ pulp_validate_certs | bool }}"
-    pulp_href: "{{ item.response.pulp_href }}"
-    state: completed
+- name: Register active tasks
+  set_fact:
+    pulp_container_active_tasks: "{{ pulp_container_active_tasks + [item.response.pulp_href] }}"
   loop: "{{ [add_result, remove_result] }}"
-  when:
+  when: 
+    - item is defined
     - item.changed | default(false)
-    - pulp_container_content_wait | bool
+    - item.response.pulp_href is defined
+  
