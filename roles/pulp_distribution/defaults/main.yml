@@ -13,3 +13,6 @@ pulp_distribution_rpm: []
 # publication.
 pulp_distribution_deb_skip_existing: false
 pulp_distribution_rpm_skip_existing: false
+
+pulp_distribution_concurrency: 10
+pulp_distribution_retries: 3

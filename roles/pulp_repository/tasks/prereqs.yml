@@ -1,0 +1,7 @@
+---
+- name: Ensure dependencies are installed
+  ansible.builtin.pip:
+    name:
+      - "pulp-glue==0.33.*"
+      - "pulp-glue-deb==0.3.*"
+    state: present

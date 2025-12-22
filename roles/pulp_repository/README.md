@@ -14,6 +14,7 @@ Role variables
 * `pulp_repository_rpm_repos`: List of RPM repositories. Default is an empty list.
 * `pulp_repository_python_repos`: List of PyPI repositories. Default is an empty list.
 * `pulp_repository_deb_repos`: List of Deb respositories. Default is an empty list.
+* `pulp_repository_concurrency`: Concurrency level for batch operations (currently only supported for container repositories). Default is 10.
 
 Example playbook
 ----------------

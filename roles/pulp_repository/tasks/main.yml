@@ -1,7 +1,20 @@
 ---
+- include_tasks: prereqs.yml
+  when: >
+    (pulp_repository_container_repos | length > 0) or
+    (pulp_repository_deb_repos | length > 0) or
+    (pulp_repository_python_repos | length > 0) or
+    (pulp_repository_rpm_repos | length > 0)
+  tags:
+    - prereqs
+    - container
+    - deb
+    - python
+    - rpm
+
 - include_tasks: container.yml
-  tags: container
   when: pulp_repository_container_repos | length > 0
+  tags: container
 
 - include_tasks: deb.yml
   when: pulp_repository_deb_repos | length > 0
@@ -12,5 +25,5 @@
   tags: python
 
 - include_tasks: rpm.yml
-  tags: rpm
   when: pulp_repository_rpm_repos | length > 0
+  tags: rpm
