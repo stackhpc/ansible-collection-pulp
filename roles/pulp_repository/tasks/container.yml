@@ -1,69 +1,81 @@
 ---
 - name: Setup container repositories
-  pulp.squeezer.container_repository:
+  stackhpc.pulp.container_repositories:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ pulp_repository_container_repos[repository_index].name }}"
-    state: "{{ pulp_repository_container_repos[repository_index].state }}"
-  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
-  loop_control:
-    index_var: repository_index
+    repositories: "{{ pulp_repository_container_repos | map('dict2items') | map('selectattr', 'key', 'in', ['name', 'description', 'state']) | map('items2dict') | list }}"
+    concurrency: "{{ pulp_repository_concurrency }}"
   register: pulp_repository_container_repositories
-  until: "pulp_repository_container_repositories is not failed"
+  until: "(pulp_repository_container_repositories | default({})).get('repositories', []) | selectattr('failed', 'equalto', false) | list | length == (pulp_repository_container_repositories | default({})).get('repositories', []) | length"
   retries: "{{ pulp_repository_container_repositories_retries }}"
   delay: 1
 
+- set_fact:
+    container_remotes_list: []
+  no_log: true
+
+  # When state is absent, having values as None fails with a type error
+  # (even though it doesn't mattter because it's getting deleted)
+  # Hence the rejectattr('value', 'none')
+- set_fact:
+    container_remotes_list: "{{ container_remotes_list + [item | combine({
+      'name': item.name + '-remote',
+      'upstream_name': item.get('upstream_name', item.name),
+      'url': item.get('url'),
+      'ca_cert': item.get('ca_cert'),
+      'client_cert': item.get('client_cert'),
+      'client_key': item.get('client_key'),
+      'download_concurrency': item.get('download_concurrency'),
+      'exclude_tags': item.get('exclude_tags'),
+      'include_tags': item.get('include_tags'),
+      'policy': item.get('policy'),
+      'proxy_url': item.get('proxy_url'),
+      'proxy_username': item.get('proxy_username'),
+      'proxy_password': item.get('proxy_password'),
+      'remote_username': item.get('remote_username'),
+      'remote_password': item.get('remote_password'),
+      'tls_validation': item.get('tls_validation'),
+      'state': item.get('state') } | dict2items | rejectattr('value', 'none') | items2dict ] }}"
+  loop: "{{ (pulp_repository_container_repos | selectattr('state', 'equalto', 'absent') + pulp_repository_container_repos | selectattr('url', 'defined')) | unique }}"
+  loop_control:
+    loop_var: item
+  no_log: true
+
 - name: Setup container remotes
-  pulp.squeezer.container_remote:
+  stackhpc.pulp.container_remotes:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ pulp_repository_container_repos[repository_index].name }}-remote"
-    ca_cert: "{{ pulp_repository_container_repos[repository_index].ca_cert | default(omit) }}"
-    client_cert: "{{ pulp_repository_container_repos[repository_index].client_cert | default(omit) }}"
-    client_key: "{{ pulp_repository_container_repos[repository_index].client_key | default(omit) }}"
-    download_concurrency: "{{ pulp_repository_container_repos[repository_index].download_concurrency | default(omit) }}"
-    exclude_tags: "{{ pulp_repository_container_repos[repository_index].exclude_tags | default(omit) }}"
-    include_tags: "{{ pulp_repository_container_repos[repository_index].include_tags | default(omit) }}"
-    policy: "{{ pulp_repository_container_repos[repository_index].policy | default(omit) }}"
-    proxy_url: "{{ pulp_repository_container_repos[repository_index].proxy_url | default(omit) }}"
-    proxy_username: "{{ pulp_repository_container_repos[repository_index].proxy_username | default(omit) }}"
-    proxy_password: "{{ pulp_repository_container_repos[repository_index].proxy_password | default(omit) }}"
-    remote_username: "{{ pulp_repository_container_repos[repository_index].remote_username | default(omit) }}"
-    remote_password: "{{ pulp_repository_container_repos[repository_index].remote_password | default(omit) }}"
-    tls_validation: "{{ pulp_repository_container_repos[repository_index].tls_validation | default(omit) }}"
-    upstream_name: "{{ pulp_repository_container_repos[repository_index].upstream_name | default(pulp_repository_container_repos[repository_index].name) }}"
-    url: "{{ pulp_repository_container_repos[repository_index].url | default(omit) }}"
-    state: "{{ pulp_repository_container_repos[repository_index].state }}"
-  when: >
-    pulp_repository_container_repos[repository_index].state == "absent" or
-    pulp_repository_container_repos[repository_index].url is defined
-  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
-  loop_control:
-    index_var: repository_index
+    remotes: "{{ container_remotes_list }}"
+    concurrency: "{{ pulp_repository_concurrency }}"
   register: pulp_repository_container_remotes
-  until: "pulp_repository_container_remotes is not failed"
+  until: "(pulp_repository_container_remotes | default({})).get('remotes', []) | selectattr('failed', 'equalto', false) | list | length == (pulp_repository_container_remotes | default({})).get('remotes', []) | length"
   retries: "{{ pulp_repository_container_remotes_retries }}"
   delay: 1
 
+- set_fact:
+    container_syncs_list: []
+  no_log: true
+
+- set_fact:
+    container_syncs_list: "{{ container_syncs_list + [{'repository': item.name, 'remote': item.name + '-remote'}] }}"
+  loop: "{{ pulp_repository_container_repos | selectattr('url', 'defined') | selectattr('state', 'equalto', 'present') }}"
+  loop_control:
+    loop_var: item
+  no_log: true
+
 - name: Sync container remotes into repositories
-  pulp.squeezer.container_sync:
+  stackhpc.pulp.container_syncs:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    repository: "{{ pulp_repository_container_repos[repository_index].name }}"
-    remote: "{{ pulp_repository_container_repos[repository_index].name }}-remote"
-  when:
-    - pulp_repository_container_repos[repository_index].url is defined
-    - pulp_repository_container_repos[repository_index].state == "present"
-  loop: "{{ pulp_repository_container_repos | map(attribute='name') }}"
-  loop_control:
-    index_var: repository_index
+    syncs: "{{ container_syncs_list }}"
+    concurrency: "{{ pulp_repository_concurrency }}"
   register: pulp_repository_container_repos_sync
-  until: "pulp_repository_container_repos_sync is not failed"
+  until: "(pulp_repository_container_repos_sync | default({})).get('syncs', []) | selectattr('failed', 'equalto', false) | list | length == (pulp_repository_container_repos_sync | default({})).get('syncs', []) | length"
   retries: "{{ pulp_repository_container_repos_sync_retries }}"
   delay: 1

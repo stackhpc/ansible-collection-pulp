@@ -1,0 +1,117 @@
+---
+- name: Test container remotes module
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - name: Create test container remotes
+      stackhpc.pulp.container_remotes:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        remotes:
+          - name: test_container_remote_1
+            upstream_name: pulp/test-fixture-1
+            url: "https://registry-1.docker.io"
+            policy: immediate
+            state: present
+          - name: test_container_remote_2
+            upstream_name: pulp/test-fixture-1
+            url: "https://registry-1.docker.io"
+            policy: on_demand
+            state: present
+      register: create_result
+
+    - name: Verify remote creation
+      assert:
+        that:
+          - create_result.remotes | length == 2
+          - create_result.remotes[0].name == "test_container_remote_1"
+          - create_result.remotes[0].remote.upstream_name == "pulp/test-fixture-1"
+          - create_result.remotes[0].remote.url == "https://registry-1.docker.io"
+          - create_result.remotes[0].remote.policy == "immediate"
+          - create_result.remotes[1].name == "test_container_remote_2"
+          - create_result.remotes[1].remote.upstream_name == "pulp/test-fixture-1"
+          - create_result.remotes[1].remote.policy == "on_demand"
+
+    - name: Query remotes
+      stackhpc.pulp.container_remotes:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        remotes:
+          - name: test_container_remote_1
+          - name: test_container_remote_2
+      register: query_result
+
+    - name: Verify query results
+      assert:
+        that:
+          - query_result.remotes | length == 2
+          - query_result.remotes[0].name == "test_container_remote_1"
+          - query_result.remotes[1].name == "test_container_remote_2"
+
+    - name: Update remote
+      stackhpc.pulp.container_remotes:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        remotes:
+          - name: test_container_remote_1
+            policy: on_demand
+            include_tags: ["latest"]
+            exclude_tags: ["beta"]
+      register: update_result
+
+    - name: Verify update
+      assert:
+        that:
+          - update_result.remotes[0].changed == true
+          - update_result.remotes[0].remote.policy == "on_demand"
+          - update_result.remotes[0].remote.include_tags == ["latest"]
+          - update_result.remotes[0].remote.exclude_tags == ["beta"]
+
+    - name: Update remote again (no change expected)
+      stackhpc.pulp.container_remotes:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        remotes:
+          - name: test_container_remote_1
+            policy: on_demand
+            include_tags: ["latest"]
+            exclude_tags: ["beta"]
+      register: update_again_result
+
+    - name: Verify idempotence
+      assert:
+        that:
+          - update_again_result.remotes[0].changed == false
+
+    - name: Delete test container remotes
+      stackhpc.pulp.container_remotes:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        remotes:
+          - name: test_container_remote_1
+            state: absent
+          - name: test_container_remote_2
+            state: absent
+      register: delete_result
+
+    - name: Verify remote deletion
+      assert:
+        that:
+          - delete_result.remotes | length == 2
+          - delete_result.remotes[0].failed == false
+          - delete_result.remotes[1].failed == false
