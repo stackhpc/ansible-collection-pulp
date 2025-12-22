@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+# Copyright: (c) 2025, StackHPC
+# Apache License, Version 2.0 (see LICENSE or http://www.apache.org/licenses/LICENSE-2.0)
 
 DOCUMENTATION = r"""
 ---
