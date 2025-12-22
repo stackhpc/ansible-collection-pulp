@@ -1,0 +1,136 @@
+---
+- hosts: localhost
+  gather_facts: false
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  module_defaults: &pulp_module_defaults
+    stackhpc.pulp.container_repositories: &pulp_connection_details
+      pulp_url: "{{ pulp_url }}"
+      username: "{{ pulp_username }}"
+      password: "{{ pulp_password }}"
+      validate_certs: "{{ pulp_validate_certs | default(true) }}"
+  tasks:
+    - name: Make repositories absent
+      stackhpc.pulp.container_repositories:
+        repositories:
+          - name: test_container_repository1
+            state: absent
+          - name: test_container_repository2
+            state: absent
+
+- hosts: localhost
+  gather_facts: false
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  module_defaults:
+    <<: *pulp_module_defaults
+  tasks:
+    - name: Create multiple repositories
+      stackhpc.pulp.container_repositories:
+        repositories:
+          - name: test_container_repository1
+            description: "repository 1 created via ansible"
+            state: present
+          - name: test_container_repository2
+            description: "repository 2 created via ansible"
+            state: present
+      register: result
+    - name: Verify create multiple repositories
+      assert:
+        that:
+          - result.changed == true
+          - result.repositories | length == 2
+          - result.repositories[0].name == 'test_container_repository1'
+          - result.repositories[0].changed == true
+          - result.repositories[0].repository.name == 'test_container_repository1'
+          - result.repositories[0].repository.description == "repository 1 created via ansible"
+          - result.repositories[1].name == 'test_container_repository2'
+          - result.repositories[1].changed == true
+          - result.repositories[1].repository.name == 'test_container_repository2'
+          - result.repositories[1].repository.description == "repository 2 created via ansible"
+
+    - name: Create multiple repositories (2nd try)
+      stackhpc.pulp.container_repositories:
+        repositories:
+          - name: test_container_repository1
+            state: present
+          - name: test_container_repository2
+            state: present
+      register: result
+    - name: Verify create multiple repositories (2nd try)
+      assert:
+        that:
+          - result.changed == false
+          - result.repositories | length == 2
+          - result.repositories[0].changed == false
+          - result.repositories[1].changed == false
+
+    - name: Update descriptions
+      stackhpc.pulp.container_repositories:
+        repositories:
+          - name: test_container_repository1
+            description: "updated repository 1"
+            state: present
+          - name: test_container_repository2
+            description: "updated repository 2"
+            state: present
+      register: result
+    - name: Verify update descriptions
+      assert:
+        that:
+          - result.changed == true
+          - result.repositories[0].changed == true
+          - result.repositories[0].repository.description == "updated repository 1"
+          - result.repositories[1].changed == true
+          - result.repositories[1].repository.description == "updated repository 2"
+
+    - name: Update descriptions (2nd try)
+      stackhpc.pulp.container_repositories:
+        repositories:
+          - name: test_container_repository1
+            description: "updated repository 1"
+            state: present
+          - name: test_container_repository2
+            description: "updated repository 2"
+            state: present
+      register: result
+    - name: Verify update descriptions (2nd try)
+      assert:
+        that:
+          - result.changed == false
+
+    - name: Delete multiple repositories
+      stackhpc.pulp.container_repositories:
+        repositories:
+          - name: test_container_repository1
+            state: absent
+          - name: test_container_repository2
+            state: absent
+      register: result
+    - name: Verify delete multiple repositories
+      assert:
+        that:
+          - result.changed == true
+          - result.repositories[0].changed == true
+          - result.repositories[1].changed == true
+
+    - name: Delete multiple repositories (2nd try)
+      stackhpc.pulp.container_repositories:
+        repositories:
+          - name: test_container_repository1
+            state: absent
+          - name: test_container_repository2
+            state: absent
+      register: result
+    - name: Verify delete multiple repositories (2nd try)
+      assert:
+        that:
+          - result.changed == false
+---
+
