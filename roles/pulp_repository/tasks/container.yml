@@ -8,7 +8,7 @@
     repositories: "{{ pulp_repository_container_repos | map('dict2items') | map('selectattr', 'key', 'in', ['name', 'description', 'state']) | map('items2dict') | list }}"
     concurrency: "{{ pulp_repository_concurrency }}"
   register: pulp_repository_container_repositories
-  until: "(pulp_repository_container_repositories | default({})).get('repositories', []) | selectattr('failed', 'equalto', false) | list | length == (pulp_repository_container_repositories | default({})).get('repositories', []) | length"
+  until: "not ((pulp_repository_container_repositories | default({})).get('repositories', []) | selectattr('failed') | list)"
   retries: "{{ pulp_repository_container_repositories_retries }}"
   delay: 1
 
@@ -20,7 +20,7 @@
   # (even though it doesn't mattter because it's getting deleted)
   # Hence the rejectattr('value', 'none')
 - set_fact:
-    container_remotes_list: "{{ container_remotes_list + [item | combine({
+    container_remotes_list: "{{ container_remotes_list + [{
       'name': item.name + '-remote',
       'upstream_name': item.get('upstream_name', item.name),
       'url': item.get('url'),
@@ -52,7 +52,7 @@
     remotes: "{{ container_remotes_list }}"
     concurrency: "{{ pulp_repository_concurrency }}"
   register: pulp_repository_container_remotes
-  until: "(pulp_repository_container_remotes | default({})).get('remotes', []) | selectattr('failed', 'equalto', false) | list | length == (pulp_repository_container_remotes | default({})).get('remotes', []) | length"
+  until: "not ((pulp_repository_container_remotes | default({})).get('remotes', []) | selectattr('failed') | list)"
   retries: "{{ pulp_repository_container_remotes_retries }}"
   delay: 1
 
@@ -76,6 +76,6 @@
     syncs: "{{ container_syncs_list }}"
     concurrency: "{{ pulp_repository_concurrency }}"
   register: pulp_repository_container_repos_sync
-  until: "(pulp_repository_container_repos_sync | default({})).get('syncs', []) | selectattr('failed', 'equalto', false) | list | length == (pulp_repository_container_repos_sync | default({})).get('syncs', []) | length"
+  until: "not ((pulp_repository_container_repos_sync | default({})).get('syncs', []) | selectattr('failed') | list)"
   retries: "{{ pulp_repository_container_repos_sync_retries }}"
   delay: 1

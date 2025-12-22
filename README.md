@@ -22,6 +22,7 @@ pulp_user role
 container_repositories module
 container_remotes module
 container_syncs module
+container_distributions module
 
 ## Using this collection
 
