@@ -1,0 +1,4 @@
+plugins/modules/container_repositories.py validate-modules:missing-gplv3-license
+plugins/modules/container_remotes.py validate-modules:missing-gplv3-license
+plugins/modules/container_distributions.py validate-modules:missing-gplv3-license
+plugins/modules/container_syncs.py validate-modules:missing-gplv3-license

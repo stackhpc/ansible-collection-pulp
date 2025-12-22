@@ -1,15 +1,13 @@
 ---
 - name: Ensure container distributions are defined
-  pulp.squeezer.container_distribution:
+  stackhpc.pulp.container_distributions:
     pulp_url: "{{ pulp_url }}"
     username: "{{ pulp_username }}"
     password: "{{ pulp_password }}"
     validate_certs: "{{ pulp_validate_certs | bool }}"
-    name: "{{ item.name }}"
-    base_path: "{{ item.base_path | default(omit) }}"
-    repository: "{{ item.repository | default(omit) }}"
-    version: "{{ item.version | default(omit) }}"
-    content_guard: "{{ item.content_guard | default(omit) }}"
-    private: "{{ item.private | default(omit) }}"
-    state: "{{ item.state }}"
-  with_items: "{{ pulp_distribution_container }}"
+    distributions: "{{ pulp_distribution_container | map('dict2items') | map('selectattr', 'key', 'in', ['name', 'base_path', 'repository', 'version', 'content_guard', 'private', 'state']) | map('items2dict') | list }}"
+    concurrency: "{{ pulp_distribution_concurrency }}"
+  register: pulp_distribution_container_distributions
+  until: "not ((pulp_distribution_container_distributions | default({})).get('distributions', []) | selectattr('failed') | list)"
+  retries: "{{ pulp_distribution_retries }}"
+  delay: 1

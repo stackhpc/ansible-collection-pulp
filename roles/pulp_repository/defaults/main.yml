@@ -13,6 +13,7 @@ pulp_repository_retries: 3
 pulp_repository_sync_retries: "{{ pulp_repository_retries }}"
 pulp_repository_remote_retries: "{{ pulp_repository_retries }}"
 pulp_repository_create_repository_retries: "{{ pulp_repository_retries }}"
+pulp_repository_concurrency: 10
 
 pulp_repository_container_repos_sync_retries: "{{ pulp_repository_sync_retries }}"
 pulp_repository_container_remotes_retries: "{{ pulp_repository_remote_retries }}"
