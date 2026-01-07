@@ -182,12 +182,9 @@ class PulpBatchDistributionAnsibleModule(PulpAnsibleModule):
             desired_attributes = {}
 
             # Map fields
-            if "base_path" in entity and entity["base_path"] is not None:
-                desired_attributes["base_path"] = entity["base_path"]
-            if "private" in entity and entity["private"] is not None:
-                desired_attributes["private"] = entity["private"]
-            if "content_guard" in entity and entity["content_guard"] is not None:
-                desired_attributes["content_guard"] = entity["content_guard"]
+            for key in ["base_path", "private", "content_guard"]:
+                if key in entity and entity[key] is not None:
+                    desired_attributes[key] = entity[key]
 
             if "repository" in entity and entity["repository"]:
                 repo_ctx = PulpContainerRepositoryContext(pulp_ctx, entity={"name": entity["repository"]})

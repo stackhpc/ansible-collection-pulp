@@ -221,8 +221,8 @@ def main():
                 "type": "list",
                 "elements": "dict",
                 "options": {
-                    "remote": {},
-                    "repository": {"required": True},
+                    "remote": {"type": "str"},
+                    "repository": {"required": True, "type": "str"},
                     "timeout": {"type": "int", "default": 3600},
                 },
                 "required": True,

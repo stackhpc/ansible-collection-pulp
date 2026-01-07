@@ -17,7 +17,7 @@
   no_log: true
 
   # When state is absent, having values as None fails with a type error
-  # (even though it doesn't mattter because it's getting deleted)
+  # (even though it doesn't matter because it's getting deleted)
   # Hence the rejectattr('value', 'none')
 - set_fact:
     container_remotes_list: "{{ container_remotes_list + [{

@@ -225,8 +225,8 @@ def main():
                 "type": "list",
                 "elements": "dict",
                 "options": {
-                    "name": {"required": True},
-                    "description": {},
+                    "name": {"required": True, "type": "str"},
+                    "description": {"type": "str"},
                     "state": {"choices": ["present", "absent"], "default": "present"},
                 },
                 "required": True,

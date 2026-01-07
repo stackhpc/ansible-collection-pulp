@@ -291,6 +291,8 @@ class PulpBatchRemoteAnsibleModule(PulpAnsibleModule):
                     del after["password"]
                 if "proxy_password" in after:
                     del after["proxy_password"]
+                if "client_key" in after:
+                    del after["client_key"]
                 result["remote"] = after
         except Exception as e:
             result["failed"] = True
