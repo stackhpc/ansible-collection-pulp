@@ -65,14 +65,14 @@
           - dist_result.distribution.name == "test_container_distribution"
           - dist_result.distribution.base_path == "test_container_distribution"
           - dist_result.distribution.repository == repo_result.repository.pulp_href
-          - dist_result.distribution.repository_version is none
+          - dist_result.distribution.repository_version == ""
 
     - name: Verify distribution creation
       assert:
         that:
           - dist_version_1_result.distribution.name == "test_container_distribution_version_1"
           - dist_version_1_result.distribution.base_path == "test_container_distribution_version_1"
-          - dist_version_1_result.distribution.repository is none
+          - dist_version_1_result.distribution.repository == ""
           - dist_version_1_result.distribution.repository_version == repo_result.repository.latest_version_href
 
     - include_role:
