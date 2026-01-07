@@ -1,0 +1,132 @@
+---
+- name: Test container syncs module
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - name: Create test repository for sync
+      pulp.squeezer.container_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+      loop:
+        - name: test_sync_repo1
+          state: present
+        - name: test_sync_repo2
+          state: present
+
+    - name: Create test remote for sync
+      pulp.squeezer.container_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: "{{ item.name }}"
+        upstream_name: "{{ item.upstream_name }}"
+        url: "{{ item.url }}"
+        policy: "{{ item.policy }}"
+        state: "{{ item.state }}"
+      loop:
+        - name: test_sync_remote1
+          upstream_name: pulp/test-fixture-1
+          url: "https://registry-1.docker.io"
+          policy: immediate
+          state: present
+        - name: test_sync_remote2
+          upstream_name: pulp/test-fixture-1
+          url: "https://registry-1.docker.io"
+          policy: on_demand
+          state: present
+
+    - name: Sync container repositories
+      stackhpc.pulp.container_syncs:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        syncs:
+          - repository: test_sync_repo1
+            remote: test_sync_remote1
+          - repository: test_sync_repo2
+            remote: test_sync_remote2
+      register: sync_result
+
+    - name: Verify sync result
+      assert:
+        that:
+          - sync_result.syncs | length == 2
+          - sync_result.syncs[0].repository == "test_sync_repo1"
+          - sync_result.syncs[0].failed == false
+          - sync_result.syncs[1].repository == "test_sync_repo2"
+          - sync_result.syncs[1].failed == false
+
+    - name: Sync again (should not change)
+      stackhpc.pulp.container_syncs:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        syncs:
+          - repository: test_sync_repo1
+            remote: test_sync_remote1
+          - repository: test_sync_repo2
+            remote: test_sync_remote2
+      register: sync_again_result
+
+    - name: Verify no change on second sync
+      assert:
+        that:
+          - sync_again_result.syncs[0].changed == false
+          - sync_again_result.syncs[0].failed == false
+          - sync_again_result.syncs[1].changed == false
+          - sync_again_result.syncs[1].failed == false
+
+    - name: Test sync failure (non-existent remote)
+      stackhpc.pulp.container_syncs:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        syncs:
+          - repository: test_sync_repo1
+            remote: non_existent_remote
+      register: failed_sync_result
+      ignore_errors: true
+
+    - name: Verify failure reporting
+      assert:
+        that:
+          - failed_sync_result.msg is search("One or more items failed")
+          - failed_sync_result.syncs[0].failed == true
+          - failed_sync_result.syncs[0].msg is search("Could not find container remote with")
+
+    - name: Clean up test remote
+      pulp.squeezer.container_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - test_sync_remote1
+        - test_sync_remote2
+
+    - name: Clean up test repository
+      pulp.squeezer.container_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - test_sync_repo1
+        - test_sync_repo2

@@ -1,0 +1,111 @@
+---
+- name: Test container distributions module
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - name: Create test repository
+      pulp.squeezer.container_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_dist_repo
+        state: present
+
+    - name: Create test container distributions
+      stackhpc.pulp.container_distributions:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        distributions:
+          - name: test_dist_1
+            base_path: test_dist_1
+            repository: test_dist_repo
+            state: present
+          - name: test_dist_2
+            base_path: test_dist_2
+            repository: test_dist_repo
+            private: true
+            state: present
+      register: create_result
+
+    - name: Verify distribution creation
+      assert:
+        that:
+          - create_result.distributions | length == 2
+          - create_result.distributions[0].name == "test_dist_1"
+          - create_result.distributions[0].distribution.base_path == "test_dist_1"
+          - create_result.distributions[0].changed == true
+          - create_result.distributions[1].name == "test_dist_2"
+          - create_result.distributions[1].distribution.private == true
+
+    - name: Update container distributions
+      stackhpc.pulp.container_distributions:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        distributions:
+          - name: test_dist_1
+            base_path: test_dist_1_updated
+            repository: test_dist_repo
+            state: present
+      register: update_result
+
+    - name: Verify update
+      assert:
+        that:
+          - update_result.distributions[0].changed == true
+          - update_result.distributions[0].distribution.base_path == "test_dist_1_updated"
+
+    - name: Update container distributions again
+      stackhpc.pulp.container_distributions:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        distributions:
+          - name: test_dist_1
+            base_path: test_dist_1_updated
+            repository: test_dist_repo
+            state: present
+      register: idempotence_result
+
+    - name: Verify idempotence
+      assert:
+        that:
+          - idempotence_result.distributions[0].changed == false
+
+    - name: Delete test container distributions
+      stackhpc.pulp.container_distributions:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        distributions:
+          - name: test_dist_1
+            state: absent
+          - name: test_dist_2
+            state: absent
+      register: delete_result
+
+    - name: Verify distribution deletion
+      assert:
+        that:
+          - delete_result.distributions[0].changed == true
+          - delete_result.distributions[1].changed == true
+
+    - name: Clean up test repository
+      pulp.squeezer.container_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_dist_repo
+        state: absent

@@ -105,7 +105,7 @@
         - name: Assert that syncing from a URL that returns 404 is retried the correct number of times
           assert:
             that:
-              - failed_result.results[0].attempts == pulp_repository_container_repos_sync_retries
+              - failed_result.attempts == pulp_repository_container_repos_sync_retries
 
         - include_role:
             name: pulp_repository
