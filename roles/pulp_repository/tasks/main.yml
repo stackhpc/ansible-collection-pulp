@@ -1,4 +1,7 @@
 ---
+- include_tasks: prereqs.yml
+  tags: prereqs
+
 - include_tasks: container.yml
   tags: container
   when: pulp_repository_container_repos | length > 0
