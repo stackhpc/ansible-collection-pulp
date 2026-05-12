@@ -2,7 +2,7 @@ namespace: stackhpc
 name: pulp
 description: >
   Roles and plugins Pulp repository server configuration
-version: "0.6.0"
+version: "0.7.0"
 readme: "README.md"
 authors:
   - "Piotr Parczewski"
@@ -10,7 +10,7 @@ authors:
   - "Mark Goddard"
   - "Alex Welsh"
 dependencies:
-  "pulp.squeezer": "0.2.3"
+  "pulp.squeezer": "0.3.0"
 license:
   - "Apache-2.0"
 tags:

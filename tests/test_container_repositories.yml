@@ -1,0 +1,102 @@
+---
+- name: Test container repositories module
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+  tasks:
+    - name: Create test container repositories
+      stackhpc.pulp.container_repositories:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        repositories:
+          - name: test_container_repo_1
+            description: Test repository 1
+            state: present
+          - name: test_container_repo_2
+            description: Test repository 2
+            state: present
+      register: create_result
+
+    - name: Verify repository creation
+      assert:
+        that:
+          - create_result.repositories | length == 2
+          - create_result.repositories[0].name == "test_container_repo_1"
+          - create_result.repositories[0].repository.description == "Test repository 1"
+          - create_result.repositories[1].name == "test_container_repo_2"
+          - create_result.repositories[1].repository.description == "Test repository 2"
+
+    - name: Query repositories
+      stackhpc.pulp.container_repositories:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        repositories:
+          - name: test_container_repo_1
+          - name: test_container_repo_2
+      register: query_result
+
+    - name: Verify query results
+      assert:
+        that:
+          - query_result.repositories | length == 2
+
+    - name: Update repository description
+      stackhpc.pulp.container_repositories:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        repositories:
+          - name: test_container_repo_1
+            description: "Updated description"
+      register: update_result
+
+    - name: Verify update
+      assert:
+        that:
+          - update_result.repositories[0].changed == true
+          - update_result.repositories[0].repository.description == "Updated description"
+
+    - name: Update repository again
+      stackhpc.pulp.container_repositories:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        repositories:
+          - name: test_container_repo_1
+            description: "Updated description"
+      register: update_again_result
+
+    - name: Verify idempotence
+      assert:
+        that:
+          - update_again_result.repositories[0].changed == false
+
+    - name: Delete test container repositories
+      stackhpc.pulp.container_repositories:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        repositories:
+          - name: test_container_repo_1
+            state: absent
+          - name: test_container_repo_2
+            state: absent
+      register: delete_result
+
+    - name: Verify repository deletion
+      assert:
+        that:
+          - delete_result.repositories | length == 2
+          - delete_result.repositories[0].failed == false
+          - delete_result.repositories[1].failed == false
