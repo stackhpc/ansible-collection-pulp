@@ -287,10 +287,14 @@ class PulpBatchRemoteAnsibleModule(PulpAnsibleModule):
                 result["changed"] = True
             if after is not None:
                 # Sanitize sensitive data from the returned object
+                if "username" in after:
+                    del after["username"]
                 if "password" in after:
                     del after["password"]
                 if "proxy_password" in after:
                     del after["proxy_password"]
+                if "proxy_username" in after:
+                    del after["proxy_username"]
                 if "client_key" in after:
                     del after["client_key"]
                 result["remote"] = after
@@ -339,14 +343,14 @@ def main():
                     "exclude_tags": {"type": "list", "elements": "str"},
                     "include_tags": {"type": "list", "elements": "str"},
                     "headers": {"type": "list", "elements": "dict"},
-                    "remote_username": {"type": "str"},
+                    "remote_username": {"type": "str", "no_log": True},
                     "remote_password": {"type": "str", "no_log": True},
                     "ca_cert": {"type": "str"},
                     "client_cert": {"type": "str"},
                     "client_key": {"type": "str", "no_log": True},
                     "tls_validation": {"type": "bool"},
                     "proxy_url": {"type": "str"},
-                    "proxy_username": {"type": "str"},
+                    "proxy_username": {"type": "str", "no_log": True},
                     "proxy_password": {"type": "str", "no_log": True},
                     "download_concurrency": {"type": "int"},
                     "rate_limit": {"type": "int"},
