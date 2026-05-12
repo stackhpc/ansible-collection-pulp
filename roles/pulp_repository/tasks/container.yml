@@ -20,6 +20,7 @@
   # (even though it doesn't matter because it's getting deleted)
   # Hence the rejectattr('value', 'none')
 - name: Build container remotes list
+  no_log: true
   set_fact:
     container_remotes_list: "{{ container_remotes_list + [{
       'name': item.name + '-remote',
