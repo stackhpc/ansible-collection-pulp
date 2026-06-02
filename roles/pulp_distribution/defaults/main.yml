@@ -6,6 +6,7 @@ pulp_validate_certs: true
 
 pulp_distribution_container: []
 pulp_distribution_deb: []
+pulp_distribution_python: []
 pulp_distribution_rpm: []
 
 # Whether to skip existing distributions. If true, new distributions will
