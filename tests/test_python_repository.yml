@@ -1,0 +1,202 @@
+---
+- name: Test pulp_repository python
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+    pulp_repository_python_repos_sync_retries: 2
+  tasks:
+    - name: Create test_python_repo
+      include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_python_repos:
+          - name: test_python_repo
+            # trailing slash is mandatory
+            url: "https://fixtures.pulpproject.org/python-pypi/"
+            policy: immediate
+            state: present
+            includes: ["shelf-reader"]
+
+    - name: Query repository
+      pulp.squeezer.python_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_python_repo
+      register: repo_result
+
+    - name: Verify repository creation
+      assert:
+        that:
+          - repo_result.repository.name == "test_python_repo"
+
+    - name: Query remote
+      pulp.squeezer.python_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_python_repo-remote
+      register: remote_result
+
+    - name: Verify remote creation
+      assert:
+        that:
+          - remote_result.remote.name == "test_python_repo-remote"
+          - remote_result.remote.url == "https://fixtures.pulpproject.org/python-pypi/"
+          - remote_result.remote.policy == "immediate"
+
+    - name: Query content
+      pulp.squeezer.api_call:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        operation_id: content_python_packages_list
+        parameters:
+          repository_version: "{{ repo_result.repository.latest_version_href }}"
+      register: content_result
+
+    - name: Verify synced content
+      assert:
+        that:
+          - content_result.response.count == 2
+          - content_result.response.results[0].filename == "shelf_reader-0.1-py2-none-any.whl"
+        fail_msg: |
+          count: {{  content_result.response.count }}
+          filenames: {% for r in content_result.response.results %}{{ r.filename }} {% endfor %}
+
+    - name: Delete test_python_repo
+      include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_python_repos:
+          - name: test_python_repo
+            state: absent
+
+    - name: Query repositories
+      pulp.squeezer.python_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: python_repositories
+
+    - name: Verify repository deletion
+      assert:
+        that: python_repositories.repositories | length == 0
+
+    - name: Query remotes
+      pulp.squeezer.python_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: python_remotes
+
+    - name: Verify remote deletion
+      assert:
+        that: python_remotes.remotes | length == 0
+
+    # ------------- TEST no sync -------------
+    - include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_python_repos:
+          # reuse previous repo name to simplify 'Verify repository deletion'
+          - name: test_python_repo
+            url: "https://fixtures.pulpproject.org/python-pypi/"
+            policy: immediate
+            state: present
+            sync: false  # changed parameter from default true
+            includes: ["shelf-reader"]
+
+    - name: Query repository
+      pulp.squeezer.python_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_python_repo
+      register: repo_result
+
+    - name: Verify repository creation
+      assert:
+        that:
+          - repo_result.repository.name == "test_python_repo"
+
+    - name: Query remote
+      pulp.squeezer.python_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        name: test_python_repo-remote
+      register: remote_result
+
+    - name: Verify remote creation
+      assert:
+        that:
+          - remote_result.remote.name == "test_python_repo-remote"
+          - remote_result.remote.url == "https://fixtures.pulpproject.org/python-pypi/"
+          - remote_result.remote.policy == "immediate"
+
+    - name: Query content (no synced content)
+      pulp.squeezer.api_call:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        operation_id: content_python_packages_list
+        parameters:
+          repository_version: "{{ repo_result.repository.latest_version_href }}"
+      register: content_result
+
+    - debug:
+        var: content_result
+
+    - name: Verify no synced content
+      assert:
+        that:
+          - content_result.response.count == 0
+          - content_result.response.results | length == 0
+        fail_msg: |
+          count: {{  content_result.response.count }}
+          filenames: {% for r in content_result.response.results %}{{ r.filename }} {% endfor %}
+
+    - name: Delete test_python_repo
+      include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_python_repos:
+          - name: test_python_repo
+            state: absent
+
+    - name: Query repositories
+      pulp.squeezer.python_repository:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: python_repositories
+
+    - name: Verify repository deletion
+      assert:
+        that: python_repositories.repositories | length == 0
+
+    - name: Query remotes
+      pulp.squeezer.python_remote:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+      register: python_remotes
+
+    - name: Verify remote deletion
+      assert:
+        that: python_remotes.remotes | length == 0
