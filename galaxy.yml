@@ -2,13 +2,14 @@ namespace: stackhpc
 name: pulp
 description: >
   Roles and plugins Pulp repository server configuration
-version: "0.6.0"
+version: "0.6.1"
 readme: "README.md"
 authors:
   - "Piotr Parczewski"
   - "Michał Nasiadka"
   - "Mark Goddard"
   - "Alex Welsh"
+  - "Seunghun Lee"
 dependencies:
   "pulp.squeezer": "0.3.0"
 license:
