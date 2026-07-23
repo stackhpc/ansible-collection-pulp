@@ -72,7 +72,10 @@
         found_tags: "{{ tags_result.response.results | map(attribute='name') | list }}"
         missing_tags: "{{ content_item.tags | difference(found_tags) }}"
       fail:
-        msg: "Some tags not found in source repository: {{ missing_tags | join(', ') }}"
+        msg: |
+          "Some tags not found in source repository: {{ content_item.repository }}"
+          "Found tags: {{ found_tags | join(', ') }}"
+          "Missing tags: {{ missing_tags | join(', ') }}"
       when:
         - content_item.state | default('present') in ['present', 'read']
         - not content_item.allow_missing | default(false)
