@@ -157,9 +157,6 @@
           repository_version: "{{ repo_result.repository.latest_version_href }}"
       register: content_result
 
-    - debug:
-        var: content_result
-
     - name: Verify no synced content
       assert:
         that:

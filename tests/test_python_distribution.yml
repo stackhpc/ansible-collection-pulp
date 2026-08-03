@@ -46,9 +46,6 @@
         name: test_python_distribution
       register: dist_result
 
-    - debug:
-        var: dist_result
-
     - name: Verify distribution creation
       assert:
         that:
@@ -60,9 +57,6 @@
         url: "{{ pulp_url }}{{ dist_result.distribution.base_url | ansible.builtin.urlsplit('path') }}simple/"
         return_content: true
       register: package_index
-
-    - debug:
-        var: package_index
 
     - name: Verify package index
       ansible.builtin.assert:
@@ -148,9 +142,6 @@
         name: test_python_distribution
       register: dist_result
 
-    - debug:
-        var: dist_result
-
     - name: Verify distribution creation
       assert:
         that:
@@ -162,9 +153,6 @@
         url: "{{ pulp_url }}{{ dist_result.distribution.base_url | ansible.builtin.urlsplit('path') }}simple/"
         return_content: true
       register: package_index
-
-    - debug:
-        var: package_index
 
     - name: Verify package index
       ansible.builtin.assert:
