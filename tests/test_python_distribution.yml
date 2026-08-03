@@ -56,27 +56,27 @@
       ansible.builtin.uri:
         url: "{{ pulp_url }}{{ dist_result.distribution.base_url | ansible.builtin.urlsplit('path') }}simple/"
         return_content: true
-      register: package_index
+      register: _package_index
 
     - name: Verify package index
       ansible.builtin.assert:
         that:
-          - package_index.status == 200
-          - "'Simple Index' in package_index.content"
-          - "'shelf-reader' not in package_index.content"  # gets pulled-through later on
+          - _package_index.status == 200
+          - "'Simple Index' in _package_index.content"
+          - "'shelf-reader' not in _package_index.content"  # gets pulled-through later on
 
     - name: Query shelf-reader from distribution
       ansible.builtin.uri:
         url: "{{ pulp_url }}{{ dist_result.distribution.base_url | ansible.builtin.urlsplit('path') }}simple/shelf-reader/"
         return_content: true
-      register: package_index
+      register: _shelf_reader
 
     - name: Verify package index
       ansible.builtin.assert:
         that:
-          - package_index.status == 200
-          - "'shelf-reader-0.1.tar.gz' in package_index.content"
-          - "'shelf_reader-0.1-py2-none-any.whl' in package_index.content"
+          - _shelf_reader.status == 200
+          - "'shelf-reader-0.1.tar.gz' in _shelf_reader.content"
+          - "'shelf_reader-0.1-py2-none-any.whl' in _shelf_reader.content"
 
     - include_role:
         name: pulp_distribution
@@ -152,14 +152,14 @@
       ansible.builtin.uri:
         url: "{{ pulp_url }}{{ dist_result.distribution.base_url | ansible.builtin.urlsplit('path') }}simple/"
         return_content: true
-      register: package_index
+      register: _distribution_package_index
 
     - name: Verify package index
       ansible.builtin.assert:
         that:
-          - package_index.status == 200
-          - "'Simple Index' in package_index.content"
-          - "'shelf-reader' in package_index.content"  # already there because the repository is synced
+          - _distribution_package_index.status == 200
+          - "'Simple Index' in _distribution_package_index.content"
+          - "'shelf-reader' in _distribution_package_index.content"  # already there because the repository is synced
 
     - include_role:
         name: pulp_distribution
