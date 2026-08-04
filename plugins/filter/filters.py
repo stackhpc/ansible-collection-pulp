@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from operator import and_
 from ansible import errors
 
 
@@ -57,10 +58,13 @@ def find_publication_for_distribution(dist, repos, pubs, dists):
         else:
             version_href = None
 
-        for pub in pubs:
-            if pub["repository"] == repository_href:
-                if not version_href or version_href == pub["repository_version"]:
-                    return pub
+        matching_pubs = [
+            pub for pub in pubs
+            if pub.get("repository") == repository_href and pub.get("repository_version")
+        ]
+        for pub in sort_publications(matching_pubs):
+            if not version_href or version_href == pub.get("repository_version"):
+                return pub
     elif "distribution" in dist:
         if "version" in dist:
             raise errors.AnsibleFilterError("Cannot specify 'version' with 'distribution'")
