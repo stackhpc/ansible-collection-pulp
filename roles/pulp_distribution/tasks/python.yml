@@ -1,0 +1,14 @@
+---
+- name: Ensure Python distributions are defined
+  pulp.squeezer.python_distribution:
+    pulp_url: "{{ pulp_url }}"
+    username: "{{ pulp_username }}"
+    password: "{{ pulp_password }}"
+    validate_certs: "{{ pulp_validate_certs | bool }}"
+    name: "{{ item.name }}"
+    base_path: "{{ item.base_path | default(omit) }}"
+    content_guard: "{{ item.content_guard | default(omit) }}"
+    remote: "{{ (item.remote | default(omit)) if item.state == 'present' else omit }}"
+    repository: "{{ item.repository if item.state == 'present' else omit }}"
+    state: "{{ item.state }}"
+  with_items: "{{ pulp_distribution_python }}"

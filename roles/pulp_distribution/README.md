@@ -12,6 +12,7 @@ Role variables
 * `pulp_validate_certs`: Whether to validate Pulp server certificate. Default is `true`
 * `pulp_distribution_container`: List of distributions for container repositories. Default is an empty list
 * `pulp_distribution_deb`: List of distributions for Deb repositories. Default is an empty list
+* `pulp_distribution_python`: List of distributions for Python repositories. Default is an empty list
 * `pulp_distribution_rpm`: List of distributions for RPM repositories. Default is an empty list
 * `pulp_distribution_deb_skip_existing`: Whether to skip existing Deb
   distributions. If true, new distributions will not be created for a
@@ -66,6 +67,18 @@ Example playbook
           base_path: ubuntu-focal-production
           distribution: ubuntu-focal
           content_guard: secure-content-guard
+          state: present
+      pulp_distribution_python:
+        # specify a remote to make a pull-through cache
+        - name: pull_through_distribution
+          base_path: pullthrough
+          repository: test_python_repo
+          remote: test_python_repo-remote
+          state: present
+        # without remote it automatically serves the latest version of the repository
+        - name: latest_version_distribution
+          base_path: latest
+          repository: test_python_repo
           state: present
       pulp_distribution_rpm:
         # Distribute the latest version of the centos-baseos repository.

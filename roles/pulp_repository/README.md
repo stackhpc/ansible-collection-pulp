@@ -52,4 +52,10 @@ Example playbook
           architectures: amd64
           policy: on_demand
           state: present
+      pulp_repository_python_repos:
+        - name: pypi
+          url: https://pypi.org/
+          policy: on_demand
+          state: present
+          sync: false
 ```

@@ -60,6 +60,7 @@
   when:
     - pulp_repository_python_repos[repository_index].url is defined
     - pulp_repository_python_repos[repository_index].state == "present"
+    - pulp_repository_python_repos[repository_index].sync | default(True)
   loop: "{{ pulp_repository_python_repos | map(attribute='name') }}"
   loop_control:
     index_var: repository_index
