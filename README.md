@@ -19,6 +19,7 @@ pulp_group role
 pulp_publication role
 pulp_repository role
 pulp_user role
+container_contents module
 container_repositories module
 container_remotes module
 container_syncs module

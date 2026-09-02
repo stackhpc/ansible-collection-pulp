@@ -6,3 +6,4 @@ pulp_validate_certs: true
 
 pulp_container_content: []
 pulp_container_content_wait: true
+pulp_container_content_concurrency: 10

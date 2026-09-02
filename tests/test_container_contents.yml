@@ -1,0 +1,279 @@
+---
+# Tests for the container_contents module. The pulp_container_content role is
+# covered by test_container_content.yml; this file exercises the batching
+# behaviour that the role test does not: several items in a single call,
+# result ordering under concurrency, partial failure, and check mode.
+- name: Test container contents module
+  gather_facts: false
+  hosts: localhost
+  vars:
+    pulp_url: http://localhost:8080
+    pulp_username: admin
+    pulp_password: password
+    pulp_validate_certs: true
+    src_repo: contents_test_src
+    dest_repos:
+      - contents_test_dest_1
+      - contents_test_dest_2
+      - contents_test_dest_3
+  tasks:
+    - name: Create source and destination repositories
+      include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_container_repos:
+          - name: contents_test_src
+            upstream_name: pulp/test-fixture-1
+            url: "https://registry-1.docker.io"
+            policy: immediate
+            state: present
+          - name: contents_test_dest_1
+            state: present
+          - name: contents_test_dest_2
+            state: present
+          - name: contents_test_dest_3
+            state: present
+
+    - name: Add tags to several repositories in one call
+      stackhpc.pulp.container_contents:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        concurrency: 3
+        contents:
+          - repository: contents_test_dest_1
+            src_repo: contents_test_src
+            tags: [manifest_a, manifest_b]
+            state: present
+          - repository: contents_test_dest_2
+            src_repo: contents_test_src
+            tags: [manifest_a, manifest_b]
+            state: present
+          - repository: contents_test_dest_3
+            src_repo: contents_test_src
+            tags: [manifest_a, manifest_b]
+            state: present
+      register: add_result
+
+    - name: Assert every item succeeded, changed, and kept its input order
+      assert:
+        that:
+          - add_result is changed
+          - add_result.contents | length == 3
+          - add_result.contents | map(attribute='repository') | list == dest_repos
+          - add_result.contents | selectattr('failed') | list | length == 0
+          - add_result.contents | rejectattr('changed') | list | length == 0
+          - add_result.contents | map(attribute='missing_tags') | flatten | list == []
+
+    - name: Query destination repositories
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name={{ item }}"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      loop: "{{ dest_repos }}"
+      register: dest_repo_query
+
+    - name: Query tags in destination repositories
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ item.json.results[0].latest_version_href | urlencode | regex_replace('/', '%2F') }}"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      loop: "{{ dest_repo_query.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      register: dest_tags
+
+    - name: Assert both tags landed in every destination
+      assert:
+        that:
+          - item.json.results | map(attribute='name') | sort | list == ['manifest_a', 'manifest_b']
+      loop: "{{ dest_tags.results }}"
+      loop_control:
+        label: "{{ item.item.item }}"
+
+    - name: Add the same tags a second time
+      stackhpc.pulp.container_contents:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        contents:
+          - repository: contents_test_dest_1
+            src_repo: contents_test_src
+            tags: [manifest_a, manifest_b]
+            state: present
+      register: add_repeat
+
+    - name: Assert re-adding unchanged tags reports no change
+      assert:
+        that:
+          - add_repeat is not changed
+          - not add_repeat.contents[0].changed
+          - not add_repeat.contents[0].failed
+
+    - name: Add tags where the middle item references a tag that does not exist
+      block:
+        - stackhpc.pulp.container_contents:
+            pulp_url: "{{ pulp_url }}"
+            username: "{{ pulp_username }}"
+            password: "{{ pulp_password }}"
+            validate_certs: "{{ pulp_validate_certs }}"
+            contents:
+              - repository: contents_test_dest_1
+                tags: [manifest_a]
+                state: absent
+              - repository: contents_test_dest_2
+                src_repo: contents_test_src
+                tags: [not-a-valid-tag]
+                state: present
+              - repository: contents_test_dest_3
+                tags: [manifest_b]
+                state: absent
+      rescue:
+        - set_fact:
+            partial_failed: "{{ ansible_failed_result }}"
+
+    - name: Assert only the offending item failed, and that it is named
+      assert:
+        that:
+          - partial_failed is defined
+          - partial_failed.msg is search("1 of 3 content operations failed")
+          - partial_failed.msg is search("contents_test_dest_2")
+          - partial_failed.msg is search("Some tags not found in source repository")
+          - partial_failed.contents | length == 3
+          - not partial_failed.contents[0].failed
+          - partial_failed.contents[1].failed
+          - not partial_failed.contents[2].failed
+
+    - name: Query the first destination repository
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name=contents_test_dest_1"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: dest_1_repo
+
+    - name: Query tags in the first destination repository
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ dest_1_repo.json.results[0].latest_version_href | urlencode | regex_replace('/', '%2F') }}"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: dest_1_tags
+
+    - name: Assert the successful sibling item still took effect
+      assert:
+        that:
+          - dest_1_tags.json.results | map(attribute='name') | list == ['manifest_b']
+
+    - name: Remove the same tag a second time
+      stackhpc.pulp.container_contents:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        contents:
+          - repository: contents_test_dest_1
+            tags: [manifest_a]
+            state: absent
+      register: absent_repeat
+
+    - name: Assert removing an already-absent tag is idempotent
+      assert:
+        that:
+          - absent_repeat is not changed
+          - not absent_repeat.contents[0].failed
+          - absent_repeat.contents[0].missing_tags == ['manifest_a']
+
+    - name: Remove a tag in check mode
+      stackhpc.pulp.container_contents:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        contents:
+          - repository: contents_test_dest_1
+            tags: [manifest_b]
+            state: absent
+      check_mode: true
+      register: check_result
+
+    - name: Assert check mode reported a change
+      assert:
+        that:
+          - check_result is changed
+          - check_result.contents[0].changed
+
+    - name: Query the first destination repository after check mode
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/repositories/container/container/?name=contents_test_dest_1"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: dest_1_repo_after_check
+
+    - name: Query tags in the first destination repository after check mode
+      uri:
+        url: "{{ pulp_url }}/pulp/api/v3/content/container/tags/?repository_version={{ dest_1_repo_after_check.json.results[0].latest_version_href | urlencode | regex_replace('/', '%2F') }}"
+        user: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        method: GET
+        status_code: 200
+        force_basic_auth: true
+      register: dest_1_tags_after_check
+
+    - name: Assert check mode wrote nothing
+      assert:
+        that:
+          - dest_1_tags_after_check.json.results | map(attribute='name') | list == ['manifest_b']
+
+    - name: Tolerate a missing tag with allow_missing, and read an existing tag
+      stackhpc.pulp.container_contents:
+        pulp_url: "{{ pulp_url }}"
+        username: "{{ pulp_username }}"
+        password: "{{ pulp_password }}"
+        validate_certs: "{{ pulp_validate_certs }}"
+        contents:
+          - repository: contents_test_dest_2
+            src_repo: contents_test_src
+            tags: [manifest_a, not-a-valid-tag]
+            allow_missing: true
+            state: present
+          - repository: contents_test_src
+            tags: [manifest_a]
+            state: read
+      register: mixed_result
+
+    - name: Assert allow_missing reported the gap without failing, and read changed nothing
+      assert:
+        that:
+          - mixed_result.contents | selectattr('failed') | list | length == 0
+          - mixed_result.contents[0].missing_tags == ['not-a-valid-tag']
+          - not mixed_result.contents[1].changed
+
+    - name: Remove test repositories
+      include_role:
+        name: pulp_repository
+      vars:
+        pulp_repository_container_repos:
+          - name: contents_test_src
+            state: absent
+          - name: contents_test_dest_1
+            state: absent
+          - name: contents_test_dest_2
+            state: absent
+          - name: contents_test_dest_3
+            state: absent
