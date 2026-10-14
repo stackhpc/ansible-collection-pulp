@@ -198,7 +198,25 @@ class PulpBatchContentAnsibleModule(PulpAnsibleModule):
             return None
         return response["results"][0]
 
-    def process_single_content(self, content_item):
+    @staticmethod
+    def _list_tags(pulp_ctx, names, repo_version):
+        tags = []
+        offset = 0
+        while True:
+            response = pulp_ctx.call(
+                TAG_LIST_OP,
+                parameters={
+                    "name__in": names,
+                    "repository_version": repo_version,
+                    "offset": offset,
+                },
+            )
+            tags.extend(response["results"])
+            if not response["next"] or not response["results"]:
+                return tags
+            offset += len(response["results"])
+
+    def process_single_content(self, content_item, wait=True):
         result = {
             "repository": content_item["repository"],
             "changed": False,
@@ -235,13 +253,7 @@ class PulpBatchContentAnsibleModule(PulpAnsibleModule):
             else:
                 ref_repo_version = dest_repo["latest_version_href"]
 
-            tags = pulp_ctx.call(
-                TAG_LIST_OP,
-                parameters={
-                    "name__in": content_item["tags"],
-                    "repository_version": ref_repo_version,
-                },
-            )["results"]
+            tags = self._list_tags(pulp_ctx, content_item["tags"], ref_repo_version)
 
             found_tags = [tag["name"] for tag in tags]
             missing_tags = [t for t in content_item["tags"] if t not in found_tags]
@@ -266,13 +278,9 @@ class PulpBatchContentAnsibleModule(PulpAnsibleModule):
             if state == "present":
                 # Only submit units the destination does not already serve, so
                 # that re-promoting an unchanged tag is not reported as a change.
-                existing = pulp_ctx.call(
-                    TAG_LIST_OP,
-                    parameters={
-                        "name__in": content_item["tags"],
-                        "repository_version": dest_repo["latest_version_href"],
-                    },
-                )["results"]
+                existing = self._list_tags(
+                    pulp_ctx, content_item["tags"], dest_repo["latest_version_href"]
+                )
                 existing_units = {tag["pulp_href"] for tag in existing}
                 content_units = [
                     href for href in content_units if href not in existing_units
@@ -288,7 +296,7 @@ class PulpBatchContentAnsibleModule(PulpAnsibleModule):
 
             task = pulp_ctx.call(
                 ADD_OP if state == "present" else REMOVE_OP,
-                non_blocking=not self.params["wait"],
+                non_blocking=not wait,
                 parameters={
                     "container_container_repository_href": dest_repo["pulp_href"]
                 },
@@ -311,19 +319,54 @@ class PulpBatchContentAnsibleModule(PulpAnsibleModule):
             )
             return
 
+        # Items that share a repository, as source or destination, must run in
+        # input order so that each one sees the effect of those before it. Group
+        # them with a union-find over repository names and run each group
+        # serially; separate groups still run concurrently.
+        parent = {}
+
+        def find(name):
+            parent.setdefault(name, name)
+            while parent[name] != name:
+                name = parent[name]
+            return name
+
+        for content_item in contents:
+            dest_root = find(content_item["repository"])
+            if content_item["src_repo"]:
+                parent[find(content_item["src_repo"])] = dest_root
+
+        groups = {}
+        for index, content_item in enumerate(contents):
+            groups.setdefault(find(content_item["repository"]), []).append(
+                (index, content_item)
+            )
+
+        def process_group(group):
+            # Only the last item may leave its task running, since any earlier
+            # one would otherwise race the reads of the item that follows it.
+            last = len(group) - 1
+            return [
+                (
+                    index,
+                    self.process_single_content(
+                        content_item, wait=self.params["wait"] or i < last
+                    ),
+                )
+                for i, (index, content_item) in enumerate(group)
+            ]
+
         results = [None] * len(contents)
         overall_changed = False
         with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:
-            futures = {
-                executor.submit(self.process_single_content, content_item): index
-                for index, content_item in enumerate(contents)
-            }
+            futures = [
+                executor.submit(process_group, group) for group in groups.values()
+            ]
             for future in concurrent.futures.as_completed(futures):
-                index = futures[future]
-                result = future.result()
-                if result["changed"]:
-                    overall_changed = True
-                results[index] = result
+                for index, result in future.result():
+                    if result["changed"]:
+                        overall_changed = True
+                    results[index] = result
 
         if overall_changed:
             self.set_changed()
